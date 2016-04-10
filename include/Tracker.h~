@@ -1,0 +1,35 @@
+#include <pcl/io/openni_grabber.h>
+#include <pcl/visualization/pcl_visualizer.h>
+
+class Tracker
+{
+  enum objState{ OBJ_UNKNOWN, OBJ_IDENTIFIED, OBJ_TRACKING, OBJ_SCANNING };
+  enum handState{ HAND_UNKNOWN, HAND_IDENTIFYING, HAND_TRACKING };
+
+ public:
+  ObjectAlgorithm* objAlgorithm;
+  HandAlgorithm* handAlgorithm;
+  CollisionDetector* collisionDetect;
+
+  double zDepth;
+
+  boost::shared_ptr<pcl::visualization::PCLVisualizer> main_viz;
+  pcl::OpenNIGrabber* interface;
+  boost::function<void(const pcl::visualization::KeyboardEvent&)> keyboardCallback;
+  
+  public Tracker()
+  {
+    interface = new pcl::OpenNIGrabber(device_id,
+				       pcl::OpenNIGrabber::OpenNI_QVGA_30Hz,
+				       pcl::OpenNIGrabber::OpenNI_QVGA_30Hz);
+    keyboardCallback  = boost::bind (&KinectTracking::keyboard_callback, 
+				     this, _1);
+			
+
+  }
+  
+  void VisualizationLoop();  //Responsible for rendering kinect feed
+  void cloud_cb();           //Registered to OpenNI, calls algorithms
+  void keyboard_callback();  //Keyboard input for various interactive functions
+  
+}

@@ -1,0 +1,24 @@
+#include <TrackerManager.hpp>
+#include <Tracker.hpp>
+
+#include <string>
+#include <iostream>
+
+using namespace std;
+
+int main (int argc, char** argv)
+{
+  cout << "Eat Ballsack\n";
+
+  TrackerManager *MainTracker = new TrackerManager();
+  Tracker *TableTracker = new Tracker();
+
+  MainTracker->NextTracker = TableTracker;
+
+  while (!MainTracker->visualizer->wasStopped ())
+    {
+      MainTracker->VisualizationLoop();
+    }
+
+  return 0;
+}

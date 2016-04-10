@@ -1,0 +1,6 @@
+#include <Algorithm.hpp>
+
+class CollisionDetector : Algorithm
+{
+
+}

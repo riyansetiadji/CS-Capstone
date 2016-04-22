@@ -44,33 +44,61 @@ do \
     } \
 }while(false)
 
-
-class TrackerManager : public Tracker
+//A singleton class holding important resources in the scene
+class TrackerManager
 {
  public:
-  bool showBackground;
-  double zDepth;
-  double computationTime;
-
-  boost::shared_ptr<pcl::visualization::PCLVisualizer> visualizer;
-  pcl::OpenNIGrabber* kinectInterface;
-
-  bool filter_mask[CLOUD_WIDTH * CLOUD_HEIGHT];
-
-  TrackerManager();
-  void Track(const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &cloud_in);
-  void KeyboardCallback();
+  //Singleton class defines only one global pointer accessible by the type name
+  static TrackerManager* GlobalTracker();
+  pcl::PointCloud<pcl::PointXYZRGBA>::Ptr GetKinectCloud()
+  { return kinectCloud; }
+  boost::shared_ptr<pcl::visualization::PCLVisualizer> GetVisualizer() 
+  { return visualizer; }
+  double GetZDepth() 
+  { return zDepth; }
 
   void InputManager(const pcl::visualization::KeyboardEvent&);
   void ProcessingLoop(const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud_in);
   void VisualizationLoop();  //Responsible for rendering kinect feed
-  void UpdateTracker(Tracker*);
-  void PrintCloud(pcl::PointCloud<pcl::PointXYZRGBA>::Ptr, 
-		  std::string, std::string);
 
 private:
-  pcl::PointCloud<pcl::PointXYZRGBA>::Ptr 
-  FilterInput(const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &);
+  static TrackerManager* trackerInstance;
+
+  bool showBackground;
+  double zDepth;
+  double computationTime;
+
+  pcl::PointCloud<pcl::PointXYZRGBA>::Ptr kinectCloud;
+  void CloudGrabber(const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr & cloud_in);
+  boost::shared_ptr<pcl::visualization::PCLVisualizer> visualizer;
+  pcl::OpenNIGrabber* kinectInterface;
+
+  TrackerManager()
+{
+   zDepth = NEAR_DEPTH;
+   showBackground = true;
+
+   std::string device_id = "";
+   //kinectInterface = new OpenNIGrabber(device_id,
+   // OpenNIGrabber::OpenNI_QVGA_30Hz, OpenNIGrabber::OpenNI_QVGA_30Hz);
+
+   boost::function<void(const pcl::visualization::KeyboardEvent &)> kb;
+   kb = boost::bind (&TrackerManager::InputManager, this, _1);
+   visualizer.reset(new pcl::visualization::PCLVisualizer ("Tracking Viewer"));	
+   visualizer->registerKeyboardCallback(kb);
+
+   //boost::function<void(const PointCloud<PointXYZRGBA>::ConstPtr &)> functionPointerNamedF;
+   //functionPointerNamedF = boost::bind (&TrackerManager::CloudGrabber, this, _1);
+   //boost::signals2::connection connect = 
+   //  kinectInterface->registerCallback (functionPointerNamedF);
+ 
+   //kinectInterface->start();
+   
+   //visualizer->getRenderWindow ()->SetSize ();
+   visualizer->setSize (1280, 720);
+   visualizer->addCoordinateSystem(0.1);
+   visualizer->initCameraParameters();
+}  
 };
 
 #endif

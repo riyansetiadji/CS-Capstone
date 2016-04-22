@@ -1,6 +1,5 @@
 #include <Tracker.hpp>
-#include <string>
-
+#include <TrackerManager.hpp>
 using namespace pcl;
 
 Tracker::Tracker()
@@ -9,45 +8,64 @@ Tracker::Tracker()
     TargetTransform = Eigen::Affine3f::Identity ();
   }
 
-Tracker::Tracker(std::string trackerName, std::string shapeName, 
+Tracker::Tracker(std::string trackerName, char callback, 
 		 float r, float g, float b, int ps)
   {
     Target = TARGET_UNKNOWN;
     TargetTransform = Eigen::Affine3f::Identity ();
 
+    callbackKey = callback;
     name = trackerName;
-    shape = shapeName;
     red = r; green = g; blue = b;
     pointSize = ps;
+    enabled = true;
   }
 
 void Tracker::Track(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
-{
-  //Will also need to do some control flow based on enumeration state of Target
-  //If this depends on the nature of the algorithm we may be in trouble
-  if(Target == TARGET_UNKNOWN)
+{ 
+  if(enabled)
     {
-      TargetCloud = TrackerAlgorithm->Execute(cloud_in);
-      TrackerAlgorithm->ComputeTransform();
-      Target = TARGET_TRACKING;
+      if(Target == TARGET_UNKNOWN)
+	{
+	  TargetCloud = TrackerAlgorithm->Execute(cloud_in);
+	  //TrackerAlgorithm->ComputeTransform();
+	  //Target = TARGET_TRACKING;
+	}
+      else if(Target == TARGET_IDENTIFYING)
+	{
+	  //TrackerAlgorithm->ComputeTransform();
+	}
+      else
+	{
+	  //TrackerAlgorithm->ComputeTransform();
+	}
+      UpdateVisualizer();
     }
-  else if(Target == TARGET_IDENTIFYING)
-    {
-      //TrackerAlgorithm->ComputeTransform();
-    }
-  else
-    {
-      //TrackerAlgorithm->ComputeTransform();
-    }
-  //TrackerAlgorithm->Execute(cloud_in);
-  //Need to have a way to reconcile the cloud_in with the captured target
-  //in order to produce the new output, something like
-  //OutputCloud = cloud_in - TargetCloud;
 }
 
-void Tracker::KeyboardCallback ()
-{
 
+void Tracker::UpdateVisualizer()
+{
+  visualization::PointCloudColorHandlerCustom<PointXYZRGBA> 
+    colorHandler(TargetCloud, red, green, blue);
+  boost::shared_ptr<visualization::PCLVisualizer> visualizer = 
+    TrackerManager::GlobalTracker()->GetVisualizer();
+  if (!visualizer->updatePointCloud (TargetCloud, colorHandler, name))
+    {
+      visualizer->addPointCloud (TargetCloud, colorHandler, name);
+      visualizer->setPointCloudRenderingProperties
+	(visualization::PCL_VISUALIZER_POINT_SIZE, pointSize, name);
+    }
+}
+
+//Need to add a smarter way to display text for each tracker automatically
+void Tracker::PrintCloud()
+{
+  boost::shared_ptr<visualization::PCLVisualizer> visualizer = 
+    TrackerManager::GlobalTracker()->GetVisualizer();
+  std::string shapeString (1, callbackKey);
+  visualizer->removeShape (shapeString);
+  visualizer->addText ((boost::format (name + " tracking %d points") % TargetCloud->points.size ()).str (), 10, 40, 15, 1.0, 1.0, 1.0, shapeString);
 }
 
 /*void Tracker::cloud_callback(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)

@@ -4,7 +4,7 @@ using namespace pcl;
 
 TableSegmenter::TableSegmenter()
 {
-  callbackKey = 't';
+  
 }
 
 pcl::PointCloud<pcl::PointXYZRGBA>::Ptr

@@ -13,9 +13,6 @@
 
 class Algorithm
 {
-protected:
-  char callbackKey;
-
 public: 
   pcl::PointCloud<pcl::PointXYZRGBA>::Ptr ReturnCloud;
   
@@ -24,9 +21,7 @@ public:
   virtual pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
   Execute(const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &) = 0;
   virtual Eigen::Affine3f ComputeTransform() = 0;
-
   virtual void PrintAlgorithm() = 0;
-  char GetCallbackKey() { return callbackKey; }
 };
 
 #endif

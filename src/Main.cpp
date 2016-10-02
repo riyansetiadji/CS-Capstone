@@ -16,6 +16,7 @@ int main (int argc, char** argv)
   Tracker* TrackStar = new Tracker("Random Ass Tracker", 'a', 9, 0, 255, 4);
   KDTracker* kdTracker = new KDTracker();
   TrackStar->TrackerAlgorithm = kdTracker;
+
   //RandomCloud* randomCloud = new RandomCloud();
   //RandomAssTracker->TrackerAlgorithm = randomCloud;
 

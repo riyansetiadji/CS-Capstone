@@ -8,9 +8,36 @@ TrackerManager* TrackerManager::trackerInstance = 0;
 TrackerManager* TrackerManager::GlobalTracker() 
 {
   if(!trackerInstance)
-    trackerInstance = new TrackerManager;  
+    trackerInstance = new TrackerManager();  
   return trackerInstance;
 }
+
+TrackerManager::TrackerManager()
+{
+   zDepth = NEAR_DEPTH;
+   showBackground = true;
+
+   std::string device_id = "";
+   kinectInterface = new OpenNIGrabber(device_id, OpenNIGrabber::OpenNI_QVGA_30Hz, 
+					    OpenNIGrabber::OpenNI_QVGA_30Hz);
+
+   boost::function<void(const visualization::KeyboardEvent &)> kb;
+   kb = boost::bind (&TrackerManager::InputManager, this, _1);
+   visualizer.reset(new visualization::PCLVisualizer ("Tracking Viewer"));	
+   visualizer->registerKeyboardCallback(kb);
+
+   boost::function<void(const PointCloud<PointXYZRGBA>::ConstPtr &)> functionPointerNamedF;
+   functionPointerNamedF = boost::bind (&TrackerManager::CloudGrabber, this, _1);
+   boost::signals2::connection connect = 
+     kinectInterface->registerCallback (functionPointerNamedF);
+ 
+   kinectInterface->start();
+   
+   //visualizer->getRenderWindow ()->SetSize ();
+   visualizer->setSize (1280, 720);
+   visualizer->addCoordinateSystem(0.1);
+   visualizer->initCameraParameters();
+}  
 
 void TrackerManager::InputManager (const visualization::KeyboardEvent& event)
 {

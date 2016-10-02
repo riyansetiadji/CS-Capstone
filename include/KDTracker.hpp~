@@ -1,0 +1,32 @@
+#ifndef SKIN_FILTER_H
+#define SKIN_FILTER_H
+
+#include <Algorithm.hpp>
+
+//We may wish to change all these inline functions to regular
+//ones and put definitions in the .cpp file for clarity
+//More likely we will do everything to never have to worry
+//about this code again
+
+class KDTracker : public Algorithm
+{
+public:
+  
+  float hgoal= 275.484;  //I'm guessing a scanning routine would check
+  float sgoal = .450776; //skin colors to dynamically get these goals
+  float vgoal = 87.5668;
+  float threshold = .05; //a percentage from 0 to 1 
+
+  pcl::search::Search <pcl::PointXYZRGB>::Ptr tree;
+  pcl::IndicesPtr indices (new std::vector <int>);
+  
+  KDTracker();
+  pcl::PointCloud<pcl::PointXYZRGBA>::Ptr 
+  Execute(const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &);
+  Eigen::Affine3f ComputeTransform();
+  void PrintAlgorithm();
+
+  void RGBToHSV(float r, float g, float b, float *h, float *s, float *v);
+}
+
+#endif

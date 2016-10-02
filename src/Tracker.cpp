@@ -39,7 +39,7 @@ void Tracker::Track(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
 	{
 	  //TrackerAlgorithm->ComputeTransform();
 	}
-      UpdateVisualizer();
+      //UpdateVisualizer();
     }
 }
 

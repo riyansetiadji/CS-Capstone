@@ -20,6 +20,8 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/io/openni_grabber.h>
 
+using namespace pcl;
+
 #define CLOUD_HEIGHT 240
 #define CLOUD_WIDTH 320
 
@@ -33,8 +35,8 @@
 do \
 { \
     static unsigned count = 0;\
-    static double last = pcl::getTime ();\
-    double now = pcl::getTime (); \
+    static double last = getTime ();\
+    double now = getTime (); \
     ++count; \
     if (now - last >= 1.0) \
     { \
@@ -48,17 +50,19 @@ do \
 class TrackerManager
 {
  public:
+  TrackerManager();
   //Singleton class defines only one global pointer accessible by the type name
   static TrackerManager* GlobalTracker();
-  pcl::PointCloud<pcl::PointXYZRGBA>::Ptr GetKinectCloud()
+  PointCloud<PointXYZRGBA>::Ptr GetKinectCloud()
   { return kinectCloud; }
-  boost::shared_ptr<pcl::visualization::PCLVisualizer> GetVisualizer() 
+  boost::shared_ptr<visualization::PCLVisualizer> GetVisualizer() 
   { return visualizer; }
   double GetZDepth() 
   { return zDepth; }
 
-  void InputManager(const pcl::visualization::KeyboardEvent&);
-  void ProcessingLoop(const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud_in);
+  void CloudGrabber(const PointCloud<PointXYZRGBA>::ConstPtr & cloud_in);
+  void InputManager(const visualization::KeyboardEvent&);
+  void ProcessingLoop(const PointCloud<PointXYZRGBA>::ConstPtr &cloud_in);
   void VisualizationLoop();  //Responsible for rendering kinect feed
 
 private:
@@ -68,37 +72,11 @@ private:
   double zDepth;
   double computationTime;
 
-  pcl::PointCloud<pcl::PointXYZRGBA>::Ptr kinectCloud;
-  void CloudGrabber(const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr & cloud_in);
-  boost::shared_ptr<pcl::visualization::PCLVisualizer> visualizer;
-  pcl::OpenNIGrabber* kinectInterface;
+  PointCloud<PointXYZRGBA>::Ptr kinectCloud;
+  
+  boost::shared_ptr<visualization::PCLVisualizer> visualizer;
+  OpenNIGrabber* kinectInterface;
 
-  TrackerManager()
-{
-   zDepth = NEAR_DEPTH;
-   showBackground = true;
-
-   std::string device_id = "";
-   //kinectInterface = new OpenNIGrabber(device_id,
-   // OpenNIGrabber::OpenNI_QVGA_30Hz, OpenNIGrabber::OpenNI_QVGA_30Hz);
-
-   boost::function<void(const pcl::visualization::KeyboardEvent &)> kb;
-   kb = boost::bind (&TrackerManager::InputManager, this, _1);
-   visualizer.reset(new pcl::visualization::PCLVisualizer ("Tracking Viewer"));	
-   visualizer->registerKeyboardCallback(kb);
-
-   //boost::function<void(const PointCloud<PointXYZRGBA>::ConstPtr &)> functionPointerNamedF;
-   //functionPointerNamedF = boost::bind (&TrackerManager::CloudGrabber, this, _1);
-   //boost::signals2::connection connect = 
-   //  kinectInterface->registerCallback (functionPointerNamedF);
- 
-   //kinectInterface->start();
-   
-   //visualizer->getRenderWindow ()->SetSize ();
-   visualizer->setSize (1280, 720);
-   visualizer->addCoordinateSystem(0.1);
-   visualizer->initCameraParameters();
-}  
 };
 
 #endif

@@ -16,7 +16,6 @@ TrackerManager::TrackerManager()
 {
    zDepth = NEAR_DEPTH;
    showBackground = true;
-
    std::string device_id = "";
    kinectInterface = new OpenNIGrabber(device_id, OpenNIGrabber::OpenNI_QVGA_30Hz, 
 					    OpenNIGrabber::OpenNI_QVGA_30Hz);
@@ -47,6 +46,16 @@ void TrackerManager::InputManager (const visualization::KeyboardEvent& event)
       if(key == 'b')
 	showBackground = !showBackground;
     }
+}
+
+void TrackerManager::CloudGrabber(const PointCloud<PointXYZRGBA>::ConstPtr &cloud_in)
+{
+  PointCloud<PointXYZRGBA>::Ptr kc(new PointCloud<PointXYZRGBA>);
+  for (size_t i = 0; i < cloud_in->points.size (); ++i)
+    {
+	  kc->points.push_back(cloud_in->points[i]);
+    }
+  kinectCloud = kc;
 }
 
 //This function is registered to OpenNI, and begins calling the Tracking algorithms

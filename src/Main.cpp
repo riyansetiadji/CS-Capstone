@@ -26,7 +26,7 @@ int main (int argc, char** argv)
   while(!TrackerManager::GlobalTracker()->GetVisualizer()->wasStopped())
     {
       TrackerManager::GlobalTracker()->VisualizationLoop();
-      TrackStar->Track(TrackerManager::GlobalTracker()->GetKinectCloud());
+      //TrackStar->Track(TrackerManager::GlobalTracker()->GetKinectCloud());
     }
   return 0;
 }

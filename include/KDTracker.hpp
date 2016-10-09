@@ -57,7 +57,7 @@ public:
   
   search::Search <PointXYZRGBA>::Ptr tree;
   
-  KDTracker();
+  KDTracker(std::string oPath, std::string hPath);
   PointCloud<PointXYZRGBA>::Ptr 
   Execute(const PointCloud<PointXYZRGBA>::Ptr &);
   Eigen::Affine3f ComputeTransform();

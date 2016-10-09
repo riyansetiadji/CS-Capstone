@@ -3,7 +3,7 @@
 using namespace pcl;
 using namespace std;
 
-KDTracker::KDTracker()
+KDTracker::KDTracker(std::string handPath, std::string objectPath)
 {
   hand_h= 0.0;
   hand_s = 0.0;
@@ -21,8 +21,8 @@ KDTracker::KDTracker()
   hand_cloud.reset(new PointCloud<PointXYZRGBA>);
   hand_object_cloud.reset(new PointCloud<PointXYZRGBA>);
   
-  io::loadPCDFile<PointXYZRGBA>("../data/andy_hand.pcd", *hand_cloud);
-  io::loadPCDFile<PointXYZRGBA>("../data/bbq_pringles.pcd", *hand_object_cloud);  
+  io::loadPCDFile<PointXYZRGBA>(handPath, *hand_cloud);
+  io::loadPCDFile<PointXYZRGBA>(objectPath, *hand_object_cloud);  
 
   // last parameter, true to show resulting cloud. false to not
   getAvgHSV(hand_cloud,&hand_h,&hand_s,&hand_v,0);

@@ -19,6 +19,10 @@ Tracker::Tracker(std::string trackerName, char callback,
     red = r; green = g; blue = b;
     pointSize = ps;
     enabled = true;
+
+    boost::function<void(const visualization::KeyboardEvent &)> kb;
+    kb = boost::bind (&Tracker::GetCallbackKey, this, _1);
+    TrackerManager::GlobalTracker()->GetVisualizer()->registerKeyboardCallback(kb);
   }
 
 void Tracker::Track(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
@@ -43,6 +47,15 @@ void Tracker::Track(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
     }
 }
 
+void Tracker::GetCallbackKey(const visualization::KeyboardEvent& event)
+{
+  if (event.keyUp())
+    {
+      char key = event.getKeyCode();
+      if(key == callbackKey)
+        enabled = !enabled;
+    }
+}
 
 void Tracker::UpdateVisualizer()
 {

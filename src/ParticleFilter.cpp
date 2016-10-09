@@ -98,14 +98,14 @@ ParticleFilter::Execute(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
   {
 	counter++;
   }
-  else
+  else if(!cloud_pass_downsampled_->empty())
   {
     //Track the object
     //std::cout << cloud_pass_downsampled_->points.size() + "\n";
     tracker_->setInputCloud (cloud_pass_downsampled_);
     //tracker_->setInputCloud (cloud_in);
     tracker_->compute ();
-	new_cloud_ = true;
+    new_cloud_ = true;
   }
   DrawParticles();
   ReturnCloud = cloud_pass_downsampled_;
@@ -124,7 +124,7 @@ void ParticleFilter::FilterPassThrough(const PointCloud<PointXYZRGBA>::Ptr &clou
 {
   PassThrough<PointXYZRGBA> pass;
   pass.setFilterFieldName ("z");
-  pass.setFilterLimits (0.0, 10.0);
+  pass.setFilterLimits (0.0, TrackerManager::GlobalTracker()->GetZDepth());
   pass.setKeepOrganized (false);
   pass.setInputCloud (cloud);
   pass.filter (result);
@@ -141,7 +141,7 @@ bool ParticleFilter::DrawParticles()
   pcl::transformPointCloud<PointXYZRGBA> (*(tracker_->getReferenceCloud ()), *result_cloud, transformation);
 
   //Draw blue model reference point cloud
-    pcl::visualization::PointCloudColorHandlerCustom<PointXYZRGBA> blue_color (result_cloud, 0, 0, 255);
+    pcl::visualization::PointCloudColorHandlerCustom<PointXYZRGBA> blue_color (result_cloud, 0, 255, 255);
 boost::shared_ptr<visualization::PCLVisualizer> visualizer = 
     TrackerManager::GlobalTracker()->GetVisualizer();
  std::string name = "pringles curley mustache";

@@ -44,30 +44,32 @@ int PCDInterface::ShowPCDFiles(int number_of_files)
 
 void PCDInterface::RecordPCDFiles(const PointCloud<PointXYZRGBA>::ConstPtr &cloud_in)
 {
-  std::cout <<"writin" << std::endl;
-  std::stringstream ss;
-  ss << fileIndex;
-  PointCloud<PointXYZRGBA>::Ptr cloud_filtered (new PointCloud<PointXYZRGBA>);
-  pcl::PassThrough<pcl::PointXYZRGBA> pass;
-  pass.setInputCloud (cloud_in);
-  pass.setFilterFieldName ("z");
-  pass.setFilterLimits (0.0, TrackerManager::GlobalTracker()->GetZDepth());
-  //pass.setFilterLimitsNegative (true);
-  pass.filter (*cloud_filtered);
-  io::savePCDFileBinary ("../data/files/pcd"+ss.str()+".pcd", *cloud_filtered);
-  fileIndex++;
-  if(fileIndex>maxFiles)
-  {
-    TrackerManager::GlobalTracker()->GetOpenNIGrabber()-> stop();
-  }
-  else
+  if(TrackerManager::GlobalTracker()->GetOpenNIGrabber()->isRunning())
     {
-      boost::this_thread::sleep (boost::posix_time::milliseconds (15));
-      std::cout<<"Recording in 3 ..."<<std::endl;	
-      boost::this_thread::sleep (boost::posix_time::milliseconds (15));
-      std::cout<<"Recording in 2 ..."<<std::endl;	
-      boost::this_thread::sleep (boost::posix_time::milliseconds (15));
-      std::cout<<"Recording in 1 ..."<<std::endl;	
+      std::stringstream ss;
+      ss << fileIndex;
+      PointCloud<PointXYZRGBA>::Ptr cloud_filtered (new PointCloud<PointXYZRGBA>);
+      pcl::PassThrough<pcl::PointXYZRGBA> pass;
+      pass.setInputCloud (cloud_in);
+      pass.setFilterFieldName ("z");
+      pass.setFilterLimits (0.0, TrackerManager::GlobalTracker()->GetZDepth());
+      //pass.setFilterLimitsNegative (true);
+      pass.filter (*cloud_filtered);
+      io::savePCDFileBinary ("../data/files/pcd"+ss.str()+".pcd", *cloud_filtered);
+      fileIndex++;
+      if(fileIndex>maxFiles)
+	{
+	  TrackerManager::GlobalTracker()->GetOpenNIGrabber()-> stop();
+	}
+      /*else
+	{
+	  boost::this_thread::sleep (boost::posix_time::milliseconds (5));
+	  std::cout<<"Recording in 3 ..."<<std::endl;	
+	  boost::this_thread::sleep (boost::posix_time::milliseconds (5));
+	  std::cout<<"Recording in 2 ..."<<std::endl;	
+	  boost::this_thread::sleep (boost::posix_time::milliseconds (5));
+	  std::cout<<"Recording in 1 ..."<<std::endl;	
+	  }*/
     }
 }
 

@@ -2,10 +2,12 @@
 #define TRACKER_H
 
 #include <Algorithm.hpp>
+#include <pcl/visualization/pcl_visualizer.h>
 
 #include <string>
 
 #define SLEEP_TIME 100
+using namespace pcl;
 class Tracker
 {
   enum TargetState{ TARGET_UNKNOWN, TARGET_IDENTIFYING, TARGET_TRACKING };
@@ -22,12 +24,12 @@ protected:
   
   float red, green, blue; //Colors for visualization
 
-  pcl::PointCloud<pcl::PointXYZRGBA>::Ptr TargetCloud;
+  PointCloud<PointXYZRGBA>::Ptr TargetCloud;
   
   Tracker();
   Tracker(std::string, char, float, float, float, int);
-  void Track(const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &cloud_in);
-  char GetCallbackKey() { return callbackKey; }
+  void Track(const PointCloud<PointXYZRGBA>::Ptr &cloud_in);
+  void GetCallbackKey(const visualization::KeyboardEvent &);
   
 private:
   void UpdateVisualizer();

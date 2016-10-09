@@ -63,7 +63,7 @@ class TrackerManager
   void CloudGrabber(const PointCloud<PointXYZRGBA>::ConstPtr & cloud_in);
   void InputManager(const visualization::KeyboardEvent&);
   void ProcessingLoop(const PointCloud<PointXYZRGBA>::ConstPtr &cloud_in);
-  void VisualizationLoop();  //Responsible for rendering kinect feed
+  void VisualizationLoop(bool);  //Responsible for rendering kinect feed
 
 private:
   static TrackerManager* trackerInstance;

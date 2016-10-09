@@ -14,7 +14,7 @@ TrackerManager* TrackerManager::GlobalTracker()
 
 TrackerManager::TrackerManager()
 {
-   zDepth = NEAR_DEPTH;
+   zDepth = FAR_DEPTH;
    showBackground = true;
    std::string device_id = "";
    kinectInterface = new OpenNIGrabber(device_id, OpenNIGrabber::OpenNI_QVGA_30Hz, 
@@ -50,12 +50,12 @@ void TrackerManager::InputManager (const visualization::KeyboardEvent& event)
 
 void TrackerManager::CloudGrabber(const PointCloud<PointXYZRGBA>::ConstPtr &cloud_in)
 {
-  PointCloud<PointXYZRGBA>::Ptr kc(new PointCloud<PointXYZRGBA>);
+  kinectCloud.reset(new PointCloud<PointXYZRGBA>);
   for (size_t i = 0; i < cloud_in->points.size (); ++i)
     {
-	  kc->points.push_back(cloud_in->points[i]);
+      //kc->points.push_back(cloud_in->points[i]);
+      kinectCloud->points.push_back(cloud_in->points[i]);
     }
-  kinectCloud = kc;
 }
 
 //This function is registered to OpenNI, and begins calling the Tracking algorithms
@@ -70,11 +70,23 @@ void TrackerManager::ProcessingLoop(const PointCloud<PointXYZRGBA>::ConstPtr &cl
 //This function should step through the linked list every frame
 //after processing, grabbing the finalized clouds from every
 //tracker and rendering them
-void TrackerManager::VisualizationLoop()
+void TrackerManager::VisualizationLoop(bool showCloud)
 {
   visualizer->spinOnce ();
   FPS_CALC ("visualization");
+  if(showCloud)
+  {
+    std::string name = "Manager";
+      visualization::PointCloudColorHandlerCustom<PointXYZRGBA>
+	colorHandler(kinectCloud, 155, 155, 155);
+if (!visualizer->updatePointCloud (kinectCloud, colorHandler, name))
+    {
 
+      visualizer->addPointCloud (kinectCloud, colorHandler, name);
+      visualizer->setPointCloudRenderingProperties
+	(visualization::PCL_VISUALIZER_POINT_SIZE, 1, name);
+    }
+  }
   visualizer->removeShape ("computation");
   visualizer->addText ((boost::format ("computation time per frame:     %f ms") % (computationTime)).str (), 10, 80, 15, 1.0, 1.0, 1.0, "computation");
 }

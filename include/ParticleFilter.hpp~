@@ -1,0 +1,19 @@
+#ifndef PARTICLE_FILTER_H
+#define PARTICLE_FILTER_H
+
+#include <Algorithm.hpp>
+
+class ParticleFilter : public Algorithm
+{
+public:
+  
+  ParticleFilter();
+  pcl::PointCloud<pcl::PointXYZRGBA>::Ptr 
+  Execute(const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &);
+  Eigen::Affine3f ComputeTransform();
+  void PrintAlgorithm();
+
+  
+};
+
+#endif

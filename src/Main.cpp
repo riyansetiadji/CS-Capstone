@@ -32,6 +32,8 @@ int main (int argc, char** argv)
   ParticleFilter* pf = new ParticleFilter(file, did);
   TrackMarks->TrackerAlgorithm = pf;
 
+  //Tracker* TrackAndField = new Tracker("Trackin'", 'c', 4, 255, 2, 255);
+  
   //RandomCloud* randomCloud = new RandomCloud();
   //RandomAssTracker->TrackerAlgorithm = randomCloud;
 
@@ -54,8 +56,9 @@ int main (int argc, char** argv)
 	  while(pcdInterface->fileIndex < pcdInterface->maxFiles)
 	    {
 	      TrackerManager::GlobalTracker()->GetVisualizer()->spinOnce();
-	      TrackViewer->Track(pcdInterface->GetNextCloud());
-	      boost::this_thread::sleep(boost::posix_time::seconds(0.2));
+	      //TrackViewer->Track(pcdInterface->GetNextCloud());
+	      TrackStar->Track(pcdInterface->GetNextCloud());
+	      boost::this_thread::sleep(boost::posix_time::seconds(0.8));
 	    }
 	}
     }

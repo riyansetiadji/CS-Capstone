@@ -14,7 +14,7 @@ TrackerManager* TrackerManager::GlobalTracker()
 
 TrackerManager::TrackerManager()
 {
-   zDepth = FAR_DEPTH;
+   zDepth = NEAR_DEPTH;
    showBackground = true;
    std::string device_id = "";
    kinectInterface = new OpenNIGrabber(device_id, OpenNIGrabber::OpenNI_QVGA_30Hz, 

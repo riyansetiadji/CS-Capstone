@@ -1,4 +1,3 @@
-
 #include <KDTracker.hpp>
 
 using namespace pcl;
@@ -6,127 +5,394 @@ using namespace std;
 
 KDTracker::KDTracker()
 {
-  hgoal= 275.484;  //I'm guessing a scanning routine would check
-  sgoal = .450776; //skin colors to dynamically get these goals
-  vgoal = 87.5668;
-  threshold = .05; //a percentage from 0 to 1
-  tree = boost::shared_ptr<search::Search<PointXYZRGBA> > (new search::KdTree<PointXYZRGBA>);
+  hand_h= 0.0;
+  hand_s = 0.0;
+  hand_v = 0.0;
+  object_h = 0.0;
+  object_s = 0.0;
+  object_v = 0.0;
+  distance_threshold = .01;
+  point_color_threshold = .01;
+  region_color_threshold = .01;
+  min_cluster_size = 1200;
+  max_cluster_size = 36300;
+  threshold = .76;
+
+  hand_cloud.reset(new PointCloud<PointXYZRGBA>);
+  hand_object_cloud.reset(new PointCloud<PointXYZRGBA>);
+  
+  io::loadPCDFile<PointXYZRGBA>("../data/andy_hand.pcd", *hand_cloud);
+  io::loadPCDFile<PointXYZRGBA>("../data/bbq_pringles.pcd", *hand_object_cloud);  
+
+  // last parameter, true to show resulting cloud. false to not
+  getAvgHSV(hand_cloud,&hand_h,&hand_s,&hand_v,0);
+  std::cout<<"hand hue:"<<hand_h<<std::endl;
+  std::cout<<"hand saturation:"<<hand_s<<std::endl;
+  std::cout<<"hand value:"<<hand_v<<std::endl;
+
+  // last parameter, true to show resulting cloud. false to not
+  getObjectAvgHSV(hand_object_cloud,hand_h,&object_h,&object_s,&object_v,0);
+  std::cout<<"object hue:"<<object_h<<std::endl;
+  std::cout<<"object saturation:"<<object_s<<std::endl;
+  std::cout<<"object value:"<<object_v<<std::endl;
+
+  //tree = boost::shared_ptr<search::Search<PointXYZRGBA> > (new search::KdTree<PointXYZRGBA>);
 }
 
 PointCloud<PointXYZRGBA>::Ptr
 KDTracker::Execute(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
 {
-    IndicesPtr indices (new std::vector <int>);
-
-PassThrough<PointXYZRGBA> pass;
-  pass.setInputCloud (cloud_in);
-  pass.setFilterFieldName ("z");
-  pass.setFilterLimits (0.0, 1.0);
-  pass.filter (*indices);
-
-    RegionGrowingRGB<PointXYZRGBA> reg;
-  reg.setInputCloud (cloud_in);
-    reg.setIndices (indices);
-    reg.setSearchMethod (tree);
-    reg.setDistanceThreshold (10);
-    reg.setPointColorThreshold (6);
-    reg.setRegionColorThreshold (5);
-    reg.setMinClusterSize (300);//original 600
-
-    std::vector <PointIndices> clusters;
-    reg.extract (clusters);
-
-    PointCloud <PointXYZRGB>::Ptr colored_cloud = reg.getColoredCloud ();
-
-    for(int i =0;i < clusters.size();i++)
-    {
-	    float h_sum;
-	    float s_sum;
-	    float v_sum;
-	    int counter;
-	    for(int j=0; j < clusters[i].indices.size(); j++)
-	    {
-	    	float r;
-		    float g;
-		    float b;
-	        r =(float) cloud_in->points[clusters[i].indices[j]].r;
-	        g = (float) cloud_in->points[clusters[i].indices[j]].g;
-	        b = (float) cloud_in->points[clusters[i].indices[j]].b;
-			float h;
-	  		float s;
-	  		float v;
-	        if(r>= 0 && r <= 255 && g>= 0 && g <= 255 && b>= 0 && b <= 255)
-	        {
-	        	counter++;
-	            RGBToHSV(r,g,b,&h,&s,&v);
-	            h_sum += h;
-	            s_sum += s;
-	            v_sum += v;
-
-	        }
-	        
-    
-	    }
-	   	h_sum/=counter;
-	    s_sum/=counter;
-	    v_sum/=counter;
-
-	    if(h_sum <= hgoal + (hgoal * threshold) || h_sum >=hgoal - (hgoal * threshold))
-	    {
-	    	if(s_sum <= sgoal + (sgoal * threshold) || s_sum >=sgoal - (sgoal * threshold))
-		    {
-		    	if(v_sum <= vgoal + (vgoal * threshold) || v_sum >=vgoal - (vgoal * threshold))
-			    {
-			    	for(int k=0; k < clusters[i].indices.size(); k++)
-	    			{
-		     ReturnCloud->points.push_back(cloud_in->points[clusters[i].indices[k]]);
-	    			}
-			    }
-		    }
-	    }
-
-	    cout<<"hue sum: "<<h_sum<<endl;
-	    cout<<"saturation sum: "<<s_sum<<endl;
-	    cout<<"lighting sum: "<<v_sum<<endl;
-	}
-	cout<<"cluster variable size: "<<clusters.size()<<endl;
-    for(int i =0; i < clusters.size(); i++)
-    {
-        cout<<"cluster num of indices: "<<clusters[i].indices.size()<<endl;
-    }
-
+  //filterSetOfPcdWithClusters("dataset/hand-ball/",50,hand_h,object_h,1);
+  std::cout << "Here we are" << std::endl;
+  //ReturnCloud = filterSetOfPcdWithPoints(cloud_in,hand_h,object_h,0);
+  ReturnCloud = filterSetOfPcdWithClusters(cloud_in,hand_h,object_h,0);
   return ReturnCloud;
 }
 
 void KDTracker::RGBToHSV(float r, float g, float b, float *h, float *s, float *v)
 {
-	float max = r;
-	if (max < g) max = g;
-	if (max < b) max = b;
-	float min = r;
-	if (min > g) min = g;
-	if (min > b) min = b;
-	
-	/*
-	 *	Calculate h
-	 */
-	
-	*h = 0;
-	if (max == min) h = 0;
-	else if (max == r) {
-		*h = 60 * (g - b)/(max - min);
-		if (*h < 0) *h += 360;
-		if (*h >= 360) *h -= 360;
-	} else if (max == g) {
-		*h = 60 * (b - r) / (max - min) + 120;
-	} else if (max == b) {
-		*h = 60 * (r - g) / (max - min) + 240;
+  float max = r;
+  if (max < g) max = g;
+  if (max < b) max = b;
+  float min = r;
+  if (min > g) min = g;
+  if (min > b) min = b;
+
+    
+
+  *h = 0;
+  if (max == min) h = 0;
+  else if (max == r) {
+    *h = 60 * (g - b)/(max - min);
+    if (*h < 0) *h += 360;
+    if (*h >= 360) *h -= 360;
+  } else if (max == g) {
+    *h = 60 * (b - r) / (max - min) + 120;
+  } else if (max == b) {
+    *h = 60 * (r - g) / (max - min) + 240;
+  }
+
+  if (max == 0) *s = 0;
+  else *s = (1 - (min / max));
+
+  *v = max/255;
+}
+
+void KDTracker::getAvgHSV(const PointCloud<PointXYZRGBA>::ConstPtr &cloud,double *h_avg, double *s_avg, double *v_avg,int showcld)
+{
+  *h_avg=0.0;
+  *s_avg=0.0;
+  *v_avg=0.0;
+  double counter = 0;
+  float r;
+  float g;
+  float b;
+  float h;
+  float s;
+  float v;
+  for(int i =0; i < cloud->points.size(); i=i+4)
+    {
+ 
+      r =(float) cloud->points[i].r;
+      g = (float) cloud->points[i].g;
+      b = (float) cloud->points[i].b;
+      // std::cout<<r<<","<<g<<","<<b<<";";
+      if(r> 0 && r <= 255 && g> 0 && g <= 255 && b> 0 && b <= 255)
+	{
+	  counter++;
+	  RGBToHSV(r,g,b,&h,&s,&v);
+	  *h_avg += (double)h;
+	  *s_avg += (double)s;
+	  *v_avg += (double)v;
+                            
+    
 	}
+    }
+  *h_avg/=counter;
+  *s_avg/=counter;
+  *v_avg/=counter;
+  if(showcld)
+    {
+      
+    }
+                    
+  /*
+    std::cout<<"---------hsv average--------"<<std::endl;
+    std::cout<<"hue average: "<<*h_avg<<std::endl;
+    std::cout<<"saturation average: "<<*s_avg<<std::endl;
+    std::cout<<"value avaerage: "<<*v_avg<<std::endl;*/
+}
 
-	if (max == 0) *s = 0;
-	else *s = 1 - (min / max);
+void KDTracker::getAvgHSVForOnePoints(const PointCloud<PointXYZRGBA>::ConstPtr &cloud,double *h_avg, double *s_avg, double *v_avg,int showcld)
+{  
+  *h_avg=0.0;
+  *s_avg=0.0;
+  *v_avg=0.0;
+  double counter = 0;
+  float r;
+  float g;
+  float b;
+  float h;
+  float s;
+  float v;
+  for(int i =0; i < cloud->points.size(); i=i+4)
+    {
+ 
+      r =(float) cloud->points[i].r;
+      g = (float) cloud->points[i].g;
+      b = (float) cloud->points[i].b;
+      // std::cout<<r<<","<<g<<","<<b<<";";
+      if(r> 0 && r <= 255 && g> 0 && g <= 255 && b> 0 && b <= 255)
+	{
+	  counter++;
+	  RGBToHSV(r,g,b,&h,&s,&v);
+	  *h_avg += (double)h;
+	  *s_avg += (double)s;
+	  *v_avg += (double)v;
+                            
+    
+	}
+      else
+	{
+	  return;
+	}
+    }
+  *h_avg/=counter;
+  *s_avg/=counter;
+  *v_avg/=counter;
+  if(showcld)
+    {
+    }
+                    
+  /*
+    std::cout<<"---------hsv average--------"<<std::endl;
+    std::cout<<"hue average: "<<*h_avg<<std::endl;
+    std::cout<<"saturation average: "<<*s_avg<<std::endl;
+    std::cout<<"value avaerage: "<<*v_avg<<std::endl;*/
+}
 
-	*v = max;
+void KDTracker::getObjectAvgHSV(const PointCloud<PointXYZRGBA>::ConstPtr &cloud,double hue,double *objectH, double *objectS,double *objectV,int showcld)
+{
+  //a percentage from 0 to 1. how close to scanned average does the point need to 
+  //used for region segmentation
+  search::Search <PointXYZRGBA>::Ptr tree = boost::shared_ptr<search::Search<PointXYZRGBA> > (new search::KdTree<PointXYZRGBA>);
+  PointCloud<PointXYZRGBA>::Ptr tmp_cloud(new PointCloud<PointXYZRGBA>);
+  PointCloud<PointXYZRGBA>::Ptr filtered_cloud(new PointCloud<PointXYZRGBA>);
+  PointCloud<PointXYZRGBA>::Ptr segmented_cloud(new PointCloud<PointXYZRGBA>);
+
+  //depth filter.
+  IndicesPtr indices (new std::vector <int>);
+  PassThrough<PointXYZRGBA> pass;
+  pass.setInputCloud (cloud);
+  pass.setFilterFieldName ("z");
+  pass.setFilterLimits (0.0, 1.0);
+  pass.filter (*indices);
+
+  //region segmentation
+  RegionGrowingRGB<PointXYZRGBA> reg;
+  reg.setInputCloud (cloud);
+  reg.setIndices (indices);
+  reg.setSearchMethod (tree);
+  reg.setDistanceThreshold (distance_threshold);
+  reg.setPointColorThreshold (point_color_threshold);
+  reg.setRegionColorThreshold (region_color_threshold);
+  reg.setMinClusterSize (min_cluster_size);
+  reg.setMaxClusterSize(max_cluster_size);
+
+  std::vector <PointIndices> clusters;
+  reg.extract (clusters);
+
+  //holds the cloud that color codes the different clusters. replace finalcloud with this if you want to see clusters
+            
+  segmented_cloud = reg.getColoredCloudRGBA ();
+            
+  int clusterIncluded = 0;
+
+  for(int i =0; i < clusters.size(); i++)
+    {
+      int counter = 9999;
+
+      for(int j=0; j< clusters[i].indices.size(); j++)
+	{
+
+	  tmp_cloud->points.push_back(cloud->points[clusters[i].indices[j]]);
+                    	
+
+	}
+      /*
+	if(showcld)
+	{
+	while(counter > 0 )
+	{
+	viewer.showCloud (tmp_cloud);
+	counter--;
+	//std::cout<<counter<<std::endl;
+	}
+	}*/
+
+      double h_average = 0.0;
+      double s_average = 0.0;
+      double v_average = 0.0;
+      getAvgHSV(tmp_cloud,&h_average,&s_average,&v_average,0);
+      //std::cout<<h_average<<", ";
+      if(h_average > (hue+(hue*threshold))  || h_average < (hue-(hue*threshold)) )
+	{
+	  clusterIncluded++;
+	  *objectH += h_average;
+	  *objectS += s_average;
+	  *objectV += v_average;
+	  for(int j=0; j< clusters[i].indices.size(); j++)
+	    {
+	      filtered_cloud->points.push_back(cloud->points[clusters[i].indices[j]]);
+	    }
+	}
+      tmp_cloud->points.clear();
+    }
+
+  *objectH/=clusterIncluded;
+  *objectS/=clusterIncluded;
+  *objectV/=clusterIncluded;
+  if(showcld)
+    {
+    }
+}
+
+PointCloud<PointXYZRGBA>::Ptr KDTracker::filterSetOfPcdWithClusters(const PointCloud<PointXYZRGBA>::Ptr &cloud, double handH,double objectH,int showcld)
+{
+  //finished loading cloud
+  //a percentage from 0 to 1. how close to scanned average does the point need to be          
+  //used for region segmentation
+  search::Search <PointXYZRGBA>::Ptr tree = boost::shared_ptr<search::Search<PointXYZRGBA> > (new search::KdTree<PointXYZRGBA>);
+  PointCloud<PointXYZRGBA>::Ptr tmp_cloud(new PointCloud<PointXYZRGBA>);
+  PointCloud<PointXYZRGBA>::Ptr filtered_cloud(new PointCloud<PointXYZRGBA>);
+  PointCloud<PointXYZRGBA>::Ptr segmented_cloud(new PointCloud<PointXYZRGBA>);
+
+  //depth filter.
+  IndicesPtr indices (new std::vector <int>);
+  PassThrough<PointXYZRGBA> pass;
+  pass.setInputCloud (cloud);
+  pass.setFilterFieldName ("z");
+  pass.setFilterLimits (0.0, 1.0);
+  pass.filter (*indices);
+
+  //region segmentation
+  RegionGrowingRGB<PointXYZRGBA> reg;
+  reg.setInputCloud (cloud);
+  reg.setIndices (indices);
+  reg.setSearchMethod (tree);
+  reg.setDistanceThreshold (distance_threshold);
+  reg.setPointColorThreshold (point_color_threshold);
+  reg.setRegionColorThreshold (region_color_threshold);
+  reg.setMinClusterSize (min_cluster_size);
+  reg.setMaxClusterSize(max_cluster_size);
+           
+  std::vector <PointIndices> clusters;
+  reg.extract (clusters);
+
+  //holds the cloud that color codes the different clusters. replace finalcloud with this if you want to see clusters
+            
+  segmented_cloud = reg.getColoredCloudRGBA ();
+            
+  int clusterIncluded = 0;
+
+  for(int i =0; i < clusters.size(); i++)
+    {
+
+      for(int j=0; j< clusters[i].indices.size(); j++)
+	{
+
+	  tmp_cloud->points.push_back(cloud->points[clusters[i].indices[j]]);
+                    	
+	}
+                    
+      double h_average = 0.0;
+      double s_average = 0.0;
+      double v_average = 0.0;
+      getAvgHSV(tmp_cloud,&h_average,&s_average,&v_average,0);
+                    
+      double distanceToHand = 0.0;
+      double distanceToObject = 0.0;
+
+      distanceToHand = std::abs(handH - h_average);
+      distanceToObject = std::abs(objectH - h_average);
+
+      if(distanceToHand < distanceToObject)
+	{
+	  for(int j=0; j< clusters[i].indices.size(); j++)
+	    {
+	      cloud->points[clusters[i].indices[j]].r = 255;
+	      cloud->points[clusters[i].indices[j]].g = 0;
+	      cloud->points[clusters[i].indices[j]].b = 0;
+                    		
+	      filtered_cloud->points.push_back(cloud->points[clusters[i].indices[j]]);
+	    }
+	}
+      else
+	{
+	  for(int j=0; j< clusters[i].indices.size(); j++)
+	    {
+	      cloud->points[clusters[i].indices[j]].r = 0;
+	      cloud->points[clusters[i].indices[j]].g = 255;
+	      cloud->points[clusters[i].indices[j]].b = 0;
+                    		
+	      //filtered_cloud->points.push_back(cloud->points[clusters[i].indices[j]]);
+	    }
+	}
+      tmp_cloud->points.clear();
+    }
+
+  return filtered_cloud;
+}
+
+PointCloud<PointXYZRGBA>::Ptr KDTracker::filterSetOfPcdWithPoints(const PointCloud<PointXYZRGBA>::Ptr &cloud,double handH,double objectH,int showcld)
+{
+  PointCloud<PointXYZRGBA>::Ptr filtered_cloud(new PointCloud<PointXYZRGBA>);
+  std::cout << "In the function" << std::endl;
+  //a percentage from 0 to 1. how close to scanned average does the point need to be 
+  //used for region segmentation
+  PointCloud<PointXYZRGBA>::Ptr tmp_cloud(new PointCloud<PointXYZRGBA>);
+  PointCloud<PointXYZRGBA>::Ptr segmented_cloud(new PointCloud<PointXYZRGBA>);
+
+  for(int i=0; i< cloud->points.size(); i++)
+    {
+
+      tmp_cloud->points.push_back(cloud->points[i]);
+                    	
+      double h_average = 0.0;
+      double s_average = 0.0;
+      double v_average = 0.0;
+      getAvgHSVForOnePoints(tmp_cloud,&h_average,&s_average,&v_average,0);
+	                    
+      double distanceToHand = 0.0;
+      double distanceToObject = 0.0;
+
+      distanceToHand = std::abs(handH - h_average);
+      distanceToObject = std::abs(objectH - h_average);
+
+      if(distanceToHand < distanceToObject)
+	{
+	                    	
+	  cloud->points[i].r = 255;
+	  cloud->points[i].g = 0;
+	  cloud->points[i].b = 0;
+	                    		
+	  filtered_cloud->points.push_back(cloud->points[i]);
+	                    	
+	}
+      else
+	{
+	  cloud->points[i].r = 0;
+	  cloud->points[i].g = 255;
+	  cloud->points[i].b = 0;
+	                    		
+	  //filtered_cloud->points.push_back(cloud->points[i]);
+	}
+      tmp_cloud->points.clear();
+
+    }
+  std::cout << "Made it" << std::endl;                           
+  //filtered_cloud->points.clear();
+  return filtered_cloud;
 }
 
 Eigen::Affine3f KDTracker::ComputeTransform()

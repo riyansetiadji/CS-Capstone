@@ -26,6 +26,7 @@ using namespace pcl;
 #define CLOUD_WIDTH 320
 
 #define NEAR_DEPTH 1.0
+#define KINDA_NEAR_DEPTH 1.5
 #define MEDIUM_DEPTH 2.0
 #define FAR_DEPTH 4.0
 

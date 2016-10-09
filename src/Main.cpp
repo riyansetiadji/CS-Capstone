@@ -19,7 +19,7 @@ int main (int argc, char** argv)
   TrackStar->TrackerAlgorithm = kdTracker;
 
   Tracker* TrackMarks = new Tracker("Strung out Tracker", 'b', 9, 0, 255, 255);
-  std::string file = "bbq_pringles.pcd";
+  std::string file = "data/bbq_pringles.pcd";
   std::string did = "666";
   ParticleFilter* pf = new ParticleFilter(file, did);
   TrackMarks->TrackerAlgorithm = pf;

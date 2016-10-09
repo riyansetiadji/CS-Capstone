@@ -55,6 +55,8 @@ class TrackerManager
   static TrackerManager* GlobalTracker();
   PointCloud<PointXYZRGBA>::Ptr GetKinectCloud()
   { return kinectCloud; }
+  OpenNIGrabber* GetOpenNIGrabber()
+  { return kinectInterface; }
   boost::shared_ptr<visualization::PCLVisualizer> GetVisualizer() 
   { return visualizer; }
   double GetZDepth() 

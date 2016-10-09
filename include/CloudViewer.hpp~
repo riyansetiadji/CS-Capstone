@@ -1,0 +1,17 @@
+#ifndef CLOUD_VIEWER_H
+#define CLOUD_VIEWER_H
+
+#include <Algorithm.hpp>
+
+class CloudViewer : public Algorithm
+{
+public: 
+  CloudViewer();
+
+  virtual pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
+  Execute(const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &) = 0;
+  virtual Eigen::Affine3f ComputeTransform() = 0;
+  virtual void PrintAlgorithm() = 0;
+};
+
+#endif

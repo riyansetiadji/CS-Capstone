@@ -1,0 +1,20 @@
+#ifndef PCD_INTERFACE_H
+#define PCD_INTERFACE_H
+
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_representation.h>
+
+using namespace pcl;
+
+class PCDInterface
+{
+public:
+int fileIndex;
+
+PCDReader();
+int GetPCDFiles(int number_of_files);
+PointCloud<PointXYZRGBA>::Ptr GetNextCloud();
+
+};
+#endif

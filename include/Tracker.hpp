@@ -14,6 +14,7 @@ class Tracker
 
 protected:
   char callbackKey;
+  float visualizerTextHeight;
 
  public:
   std::string name;
@@ -27,7 +28,7 @@ protected:
   PointCloud<PointXYZRGBA>::Ptr TargetCloud;
   
   Tracker();
-  Tracker(std::string, char, float, float, float, int);
+  Tracker(std::string, char, float, float, float, int, bool, float);
   void Track(const PointCloud<PointXYZRGBA>::Ptr &cloud_in);
   void GetCallbackKey(const visualization::KeyboardEvent &);
   

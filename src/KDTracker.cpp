@@ -43,9 +43,8 @@ PointCloud<PointXYZRGBA>::Ptr
 KDTracker::Execute(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
 {
   //filterSetOfPcdWithClusters("dataset/hand-ball/",50,hand_h,object_h,1);
-  std::cout << "Here we are" << std::endl;
+  ReturnCloud = filterSetOfPcdWithPoints(cloud_in,hand_h,object_h,0);
   //ReturnCloud = filterSetOfPcdWithPoints(cloud_in,hand_h,object_h,0);
-  ReturnCloud = filterSetOfPcdWithClusters(cloud_in,hand_h,object_h,0);
   return ReturnCloud;
 }
 
@@ -257,6 +256,43 @@ void KDTracker::getObjectAvgHSV(const PointCloud<PointXYZRGBA>::ConstPtr &cloud,
     }
 }
 
+PointCloud<PointXYZRGBA>::Ptr KDTracker::PointFilter(const PointCloud<PointXYZRGBA>::Ptr &cloud)
+{
+  search::Search <PointXYZRGBA>::Ptr tree = boost::shared_ptr<search::Search<PointXYZRGBA> > (new search::KdTree<PointXYZRGBA>);
+
+  PointCloud<PointXYZRGBA>::Ptr segmented_cloud(new PointCloud<PointXYZRGBA>);
+
+  //depth filter.
+  IndicesPtr indices (new std::vector <int>);
+  PassThrough<PointXYZRGBA> pass;
+  pass.setInputCloud (cloud);
+  pass.setFilterFieldName ("z");
+  pass.setFilterLimits (0.0, 1.0);
+  pass.filter (*indices);
+
+  //region segmentation
+  RegionGrowingRGB<PointXYZRGBA> reg;
+  reg.setInputCloud (cloud);
+  reg.setIndices (indices);
+  reg.setSearchMethod (tree);
+  reg.setDistanceThreshold (distance_threshold);
+  reg.setPointColorThreshold (point_color_threshold);
+  reg.setRegionColorThreshold (region_color_threshold);
+  reg.setMinClusterSize (min_cluster_size);
+  reg.setMaxClusterSize(max_cluster_size);
+  reg.setNumberOfRegionNeighbours(100);
+
+
+  std::vector <PointIndices> clusters;
+  reg.extract (clusters);
+
+  //holds the cloud that color codes the different clusters. replace finalcloud with this if you want to see clusters
+            
+  segmented_cloud = reg.getColoredCloudRGBA ();
+  return segmented_cloud;
+}
+
+
 PointCloud<PointXYZRGBA>::Ptr KDTracker::filterSetOfPcdWithClusters(const PointCloud<PointXYZRGBA>::Ptr &cloud, double handH,double objectH,int showcld)
 {
   //finished loading cloud
@@ -392,7 +428,7 @@ PointCloud<PointXYZRGBA>::Ptr KDTracker::filterSetOfPcdWithPoints(const PointClo
     }
   std::cout << "Made it" << std::endl;                           
   //filtered_cloud->points.clear();
-  return filtered_cloud;
+  return PointFilter(filtered_cloud);
 }
 
 Eigen::Affine3f KDTracker::ComputeTransform()

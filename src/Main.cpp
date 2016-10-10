@@ -15,35 +15,33 @@ using namespace std;
 int main (int argc, char** argv)
 {
   cout << "Eat Your Greens\n";
-  int pcdInput = std::atoi(argv[1]);
-  
-  Tracker* TrackViewer = new Tracker("View the cloud, be the cloud", 'z', 125, 175, 215, 5);
-  CloudViewer* cViewer = new CloudViewer();
-  TrackViewer->TrackerAlgorithm = cViewer;
+  int kinectInput = std::atoi(argv[1]);
+  cout << kinectInput << std::endl;
+  CloudViewer* cViewer = new CloudViewer();  
+  Tracker* TrackViewer = TrackerManager::GlobalTracker()->
+    CreateTracker(cViewer, "CloudViewer", 'z', 125, 175, 215, 1, true);
 
-  Tracker* TrackStar = new Tracker("Random Ass Tracker", 'a', 9, 0, 255, 4);
   KDTracker* kdTracker = new KDTracker("../data/andy_hand.pcd", "../data/chewy.pcd");
-  TrackStar->TrackerAlgorithm = kdTracker;
-
-  Tracker* TrackMarks = new Tracker("Strung out Tracker", 'b', 9, 0, 255, 2);
-  std::string file = "../data/bbq_pringles.pcd";
+  Tracker* TrackStar = TrackerManager::GlobalTracker()->
+    CreateTracker(kdTracker, "KDTracker", 'a', 9, 251, 2, 4, false);
+ 
+  std::string file = "../data/chewy.pcd";
   std::string did = "666";
   ParticleFilter* pf = new ParticleFilter(file, did);
-  TrackMarks->TrackerAlgorithm = pf;
-
-  //Tracker* TrackAndField = new Tracker("Trackin'", 'c', 4, 255, 2, 255);
+  Tracker* TrackMarks = TrackerManager::GlobalTracker()->
+    CreateTracker(pf, "ParticleFilter", 'b', 9, 0, 255, 2, false);
   
-  //RandomCloud* randomCloud = new RandomCloud();
-  //RandomAssTracker->TrackerAlgorithm = randomCloud;
-
+  PCDInterface* pcdInterface = new PCDInterface(argv[2][0], std::atoi(argv[3]));
+  float milSeconds = std::atof(argv[4]);
   srand(time(NULL));
 
 //Need a way to register trackers with the TrackerManager so they will respond to//the keyboard callback.
-  if(pcdInput)
+  if(kinectInput)
     {
-      PCDInterface* pcdInterface = new PCDInterface(argv[2][0], std::atoi(argv[3]));
+      TrackerManager::GlobalTracker()->InitKinect();
       if(pcdInterface->Write())
 	{
+	  TrackerManager::GlobalTracker()->GetOpenNIGrabber()->start();
 	  while(TrackerManager::GlobalTracker()->GetOpenNIGrabber()->isRunning())
 	  {
 	    std::cout << "Writing" << std::endl;
@@ -52,25 +50,26 @@ int main (int argc, char** argv)
 	}
       else
 	{
-	  TrackerManager::GlobalTracker()->GetOpenNIGrabber()->stop();
-	  while(pcdInterface->fileIndex < pcdInterface->maxFiles)
-	    {
-	      TrackerManager::GlobalTracker()->GetVisualizer()->spinOnce();
-	      //TrackViewer->Track(pcdInterface->GetNextCloud());
-	      //TrackStar->Track(pcdInterface->GetNextCloud());
-	      TrackMarks->Track(pcdInterface->GetNextCloud());
-	      boost::this_thread::sleep(boost::posix_time::seconds(0.5));
-	    }
-	}
-    }
-  else
-    {
-        while(!TrackerManager::GlobalTracker()->GetVisualizer()->wasStopped())
+	  TrackerManager::GlobalTracker()->GetOpenNIGrabber()->start();
+        while(TrackerManager::GlobalTracker()->GetOpenNIGrabber()->isRunning())
 	  {
 	    TrackerManager::GlobalTracker()->VisualizationLoop(true);
 	    TrackMarks->Track(TrackerManager::GlobalTracker()->GetKinectCloud());
 	    //TrackStar->Track(TrackerManager::GlobalTracker()->GetKinectCloud());
 	  }
+	}
+    }
+  else
+    {
+      cout << "At the files\n";
+	  while(pcdInterface->fileIndex < pcdInterface->maxFiles)
+	    {
+	      TrackerManager::GlobalTracker()->GetVisualizer()->spinOnce();
+	      TrackViewer->Track(pcdInterface->GetNextCloud());
+	      TrackStar->Track(pcdInterface->GetNextCloud());
+	      TrackMarks->Track(pcdInterface->GetNextCloud());
+	      boost::this_thread::sleep(boost::posix_time::milliseconds(milSeconds));
+	    }
     }
 
   return 0;

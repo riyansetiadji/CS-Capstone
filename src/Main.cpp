@@ -5,7 +5,7 @@
 #include <ParticleFilter.hpp>
 #include <CloudViewer.hpp>
 #include <PCDInterface.hpp>
-
+#include <string.h>
 #include <string>
 #include <stdlib.h>
 #include <iostream>
@@ -16,22 +16,24 @@ int main (int argc, char** argv)
 {
   cout << "Eat Your Greens\n";
   int kinectInput = std::atoi(argv[1]);
+   std::string fileloc = argv[5];
   cout << kinectInput << std::endl;
+  
   CloudViewer* cViewer = new CloudViewer();  
   Tracker* TrackViewer = TrackerManager::GlobalTracker()->
     CreateTracker(cViewer, "CloudViewer", 'z', 125, 175, 215, 1, true);
 
-  KDTracker* kdTracker = new KDTracker("../data/andy_hand.pcd", "../data/chewy.pcd");
+  KDTracker* kdTracker = new KDTracker("../data/andy_hand.pcd", "../data/"+fileloc+"/"+fileloc+"10.pcd");
   Tracker* TrackStar = TrackerManager::GlobalTracker()->
     CreateTracker(kdTracker, "KDTracker", 'a', 9, 251, 2, 4, false);
  
-  std::string file = "../data/chewy.pcd";
+  std::string file = "../data/bbq_pringles.pcd";
   std::string did = "666";
   ParticleFilter* pf = new ParticleFilter(file, did);
   Tracker* TrackMarks = TrackerManager::GlobalTracker()->
     CreateTracker(pf, "ParticleFilter", 'b', 9, 0, 255, 2, false);
-  
-  PCDInterface* pcdInterface = new PCDInterface(argv[2][0], std::atoi(argv[3]));
+ 
+  PCDInterface* pcdInterface = new PCDInterface(argv[2][0], std::atoi(argv[3]),fileloc);
   float milSeconds = std::atof(argv[4]);
   srand(time(NULL));
 
@@ -41,6 +43,7 @@ int main (int argc, char** argv)
       TrackerManager::GlobalTracker()->InitKinect();
       if(pcdInterface->Write())
 	{
+    std::cout << "passed write function" << std::endl;
 	  TrackerManager::GlobalTracker()->GetOpenNIGrabber()->start();
 	  while(TrackerManager::GlobalTracker()->GetOpenNIGrabber()->isRunning())
 	  {
@@ -55,7 +58,7 @@ int main (int argc, char** argv)
 	  {
 	    TrackerManager::GlobalTracker()->VisualizationLoop(true);
 	    TrackMarks->Track(TrackerManager::GlobalTracker()->GetKinectCloud());
-	    //TrackStar->Track(TrackerManager::GlobalTracker()->GetKinectCloud());
+	    TrackStar->Track(TrackerManager::GlobalTracker()->GetKinectCloud());
 	  }
 	}
     }
@@ -65,7 +68,7 @@ int main (int argc, char** argv)
 	  while(pcdInterface->fileIndex < pcdInterface->maxFiles)
 	    {
 	      TrackerManager::GlobalTracker()->GetVisualizer()->spinOnce();
-	      TrackViewer->Track(pcdInterface->GetNextCloud());
+	     TrackViewer->Track(pcdInterface->GetNextCloud());
 	      TrackStar->Track(pcdInterface->GetNextCloud());
 	      TrackMarks->Track(pcdInterface->GetNextCloud());
 	      boost::this_thread::sleep(boost::posix_time::milliseconds(milSeconds));

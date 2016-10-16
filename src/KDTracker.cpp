@@ -43,7 +43,7 @@ PointCloud<PointXYZRGBA>::Ptr
 KDTracker::Execute(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
 {
   //filterSetOfPcdWithClusters("dataset/hand-ball/",50,hand_h,object_h,1);
-  ReturnCloud = filterSetOfPcdWithPoints(cloud_in,hand_h,object_h,0);
+  ReturnCloud = filterSetOfPcdWithClusters(cloud_in,hand_h,object_h,0);
   //ReturnCloud = filterSetOfPcdWithPoints(cloud_in,hand_h,object_h,0);
   return ReturnCloud;
 }
@@ -383,7 +383,7 @@ PointCloud<PointXYZRGBA>::Ptr KDTracker::filterSetOfPcdWithClusters(const PointC
 PointCloud<PointXYZRGBA>::Ptr KDTracker::filterSetOfPcdWithPoints(const PointCloud<PointXYZRGBA>::Ptr &cloud,double handH,double objectH,int showcld)
 {
   PointCloud<PointXYZRGBA>::Ptr filtered_cloud(new PointCloud<PointXYZRGBA>);
-  std::cout << "In the function" << std::endl;
+  //std::cout << "In the function" << std::endl;
   //a percentage from 0 to 1. how close to scanned average does the point need to be 
   //used for region segmentation
   PointCloud<PointXYZRGBA>::Ptr tmp_cloud(new PointCloud<PointXYZRGBA>);
@@ -426,7 +426,7 @@ PointCloud<PointXYZRGBA>::Ptr KDTracker::filterSetOfPcdWithPoints(const PointClo
       tmp_cloud->points.clear();
 
     }
-  std::cout << "Made it" << std::endl;                           
+  //std::cout << "Made it" << std::endl;                           
   //filtered_cloud->points.clear();
   return PointFilter(filtered_cloud);
 }

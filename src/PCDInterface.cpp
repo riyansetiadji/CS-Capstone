@@ -1,10 +1,11 @@
 #include <PCDInterface.hpp>
 #include <TrackerManager.hpp>
-
+#include <string.h>
 using namespace pcl;
 
-PCDInterface::PCDInterface(char rw, int maxF)
+PCDInterface::PCDInterface(char rw, int maxF,std::string files)
 {
+  fileLoc = files;
   rwFunction = rw;
   fileIndex = 0;
   maxFiles = maxF;
@@ -78,7 +79,7 @@ PointCloud<PointXYZRGBA>::Ptr PCDInterface::GetNextCloud()
   PointCloud<PointXYZRGBA>::Ptr basic_cloud_ptr(new PointCloud<PointXYZRGBA>);
   std::stringstream ss;
   ss << fileIndex;
-  std::string filename = "../data/files/pcd"+ss.str()+".pcd";
+  std::string filename = "../data/"+fileLoc+"/"+fileLoc+ss.str()+".pcd";
   fileIndex++;
    if(io::loadPCDFile<PointXYZRGBA>(filename, *basic_cloud_ptr)==-1)
       {

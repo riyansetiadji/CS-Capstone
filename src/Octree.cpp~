@@ -1,0 +1,39 @@
+#include <Octree.hpp>
+
+using namespace pcl;
+
+Octree::Octree(float res)
+{
+  resolution = res;
+}
+
+PointCloud<PointXYZRGBA>::Ptr
+Octree::Execute(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
+{
+  octree::OctreePointClould<PointXYZRGBA> octree (resolution);
+  octree.setInputCloud(cloud_in);
+  octree.addPointsFromInputCloud();
+
+  octree::OctreePointCloud<PointXYZRGBA>::LeafNodeIterator itL(octree);
+
+  std::vector<int> indexVector;
+  unsigned int leafCount = 0;
+  while (*++itL )
+    {
+      *itL->getData (indexVector);
+      ++leafCount;
+    }
+
+  ReturnCloud = cloud_in;
+  return ReturnCloud;
+}
+
+Eigen::Affine3f Octree::ComputeTransform()
+{
+  return Eigen::Affine3f::Identity ();
+}
+
+void Octree::PrintAlgorithm()
+{
+  
+}

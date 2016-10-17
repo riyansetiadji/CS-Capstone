@@ -1,0 +1,22 @@
+#ifndef NAIVE_COLLIDER_H
+#define NAIVE_COLLIDER_H
+
+#include <Algorithm.hpp>
+
+using namespace pcl;
+
+class NaiveCollider : public Algorithm
+{
+public:
+  NaiveCollider();
+  PointCloud<PointXYZRGBA>::Ptr
+
+  void SetCollisionCloud();
+  virtual PointCloud<PointXYZRGBA>::Ptr
+  Execute(const PointCloud<PointXYZRGBA>::Ptr &) = 0;
+  
+  virtual Eigen::Affine3f ComputeTransform() = 0;
+  virtual void PrintAlgorithm() = 0;
+};
+
+#endif

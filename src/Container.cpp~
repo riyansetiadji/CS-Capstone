@@ -1,0 +1,6 @@
+#include <Container.hpp>
+
+using namespace pcl;
+
+Container::Container()
+{}

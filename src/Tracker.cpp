@@ -1,19 +1,13 @@
 #include <Tracker.hpp>
-#include <TrackerManager.hpp>
+
 using namespace pcl;
 
 Tracker::Tracker()
-  {
-    Target = TARGET_UNKNOWN;
-    TargetTransform = Eigen::Affine3f::Identity ();
-  }
+  {}
 
 Tracker::Tracker(std::string trackerName, char callback, 
 		 float r, float g, float b, int ps, bool en, float h)
   {
-    Target = TARGET_UNKNOWN;
-    TargetTransform = Eigen::Affine3f::Identity ();
-
     callbackKey = callback;
     visualizerTextHeight = h;
 
@@ -24,7 +18,7 @@ Tracker::Tracker(std::string trackerName, char callback,
 
     boost::function<void(const visualization::KeyboardEvent &)> kb;
     kb = boost::bind (&Tracker::GetCallbackKey, this, _1);
-    TrackerManager::GlobalTracker()->GetVisualizer()->registerKeyboardCallback(kb);
+    viz->registerKeyboardCallback(kb);
   }
 
 void Tracker::Track(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
@@ -34,20 +28,7 @@ void Tracker::Track(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
     {
       if(!cloud_in->points.empty())
 	{
-	  if(Target == TARGET_UNKNOWN)
-	    {
-	      TargetCloud = TrackerAlgorithm->Execute(cloud_in);
-	      //TrackerAlgorithm->ComputeTransform();
-	      //Target = TARGET_TRACKING;
-	    }
-	  else if(Target == TARGET_IDENTIFYING)
-	    {
-	      //TrackerAlgorithm->ComputeTransform();
-	    }
-	  else
-	    {
-	      //TrackerAlgorithm->ComputeTransform();
-	    }
+	  TargetCloud = TrackerAlgorithm->Execute(cloud_in);
 	}
     }
       UpdateVisualizer();

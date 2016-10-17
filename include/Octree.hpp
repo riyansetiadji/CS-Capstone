@@ -11,18 +11,18 @@
 #include <vector>
 #include <ctime>
 
-#include <Algorithm.hpp>
+#include <CollisionAlgorithm.hpp>
 
 using namespace pcl;
 
-class Octree : public Algorithm
+class Octree : public CollisionAlgorithm
 {
 public:
   Octree(float res);
   float resolution;
 
   PointCloud<PointXYZRGBA>::Ptr
-  Execute(const PointCloud<PointXYZRGBA>::Ptr &);
+  Execute(const PointCloud<PointXYZRGBA>::Ptr &, const PointCloud<PointXYZRGBA>::Ptr &);
   Eigen::Affine3f ComputeTransform();
   void PrintAlgorithm();
 };

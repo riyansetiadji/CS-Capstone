@@ -7,7 +7,7 @@ TableSegmenter::TableSegmenter()
   
 }
 
-pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
+PointCloud<PointXYZRGBA>::Ptr
 TableSegmenter::Execute(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
 {
   console::print_highlight ("segmenting plane...\n");

@@ -1,9 +1,9 @@
 #ifndef CLOUD_VIEWER_H
 #define CLOUD_VIEWER_H
 
-#include <Algorithm.hpp>
+#include <TrackingAlgorithm.hpp>
 
-class CloudViewer : public Algorithm
+class CloudViewer : public TrackingAlgorithm
 {
 public: 
   CloudViewer();

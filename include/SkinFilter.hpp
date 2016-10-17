@@ -1,14 +1,14 @@
 #ifndef SKIN_FILTER_H
 #define SKIN_FILTER_H
 
-#include <Algorithm.hpp>
+#include <TrackingAlgorithm.hpp>
 
 //We may wish to change all these inline functions to regular
 //ones and put definitions in the .cpp file for clarity
 //More likely we will do everything to never have to worry
 //about this code again
 
-class SkinFilter : public Algorithm
+class SkinFilter : public TrackingAlgorithm
 {
 public:
   // UV skin color probability, P(c|s) 

@@ -1,7 +1,7 @@
 #ifndef TABLE_SEGMENTER_H
 #define TABLE_SEGMENTER_H
 
-#include <Algorithm.hpp>
+#include <TrackingAlgorithm.hpp>
 
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/segmentation/extract_clusters.h>
@@ -9,7 +9,7 @@
 
 #include <pcl/common/centroid.h>
 
-class TableSegmenter : public Algorithm
+class TableSegmenter : public TrackingAlgorithm
 {
 public:
   pcl::PointCloud<pcl::PointXYZRGBA>::Ptr projectionCloud;

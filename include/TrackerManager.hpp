@@ -2,6 +2,7 @@
 #define TRACKER_MANAGER_H
 
 #include <Tracker.hpp>
+#include <TrackingAlgorithm.hpp>
 
 #include <pcl/pcl_base.h>
 #include <pcl/visualization/pcl_visualizer.h>
@@ -62,7 +63,7 @@ class TrackerManager
   double GetZDepth() 
   { return zDepth; }
 
-  Tracker* CreateTracker(Algorithm* alg, std::string name, char key, float r, float g, float b, int size, bool en)
+  Tracker* CreateTracker(TrackingAlgorithm* alg, std::string name, char key, float r, float g, float b, int size, bool en)
   {
     Tracker* track = new Tracker(name, key, r, g, b, size, en, trackerHeight);
     track->TrackerAlgorithm = alg;

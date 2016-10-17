@@ -1,7 +1,7 @@
 #ifndef PARTICLE_FILTER_H
 #define PARTICLE_FILTER_H
 
-#include <Algorithm.hpp>
+#include <TrackingAlgorithm.hpp>
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -38,7 +38,7 @@
 
 using namespace pcl;
 
-class ParticleFilter : public Algorithm
+class ParticleFilter : public TrackingAlgorithm
 {
 public:
   PointCloud<PointXYZRGBA>::Ptr cloud_pass_;

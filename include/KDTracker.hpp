@@ -1,7 +1,7 @@
 #ifndef KD_TRACKER_H
 #define KD_TRACKER_H
 
-#include <Algorithm.hpp>
+#include <TrackingAlgorithm.hpp>
 #include <pcl/io/openni_grabber.h>
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/io/pcd_io.h>
@@ -35,7 +35,7 @@
 
 using namespace pcl;
 
-class KDTracker : public Algorithm
+class KDTracker : public TrackingAlgorithm
 {
 public:
   

@@ -43,7 +43,7 @@ int main (int argc, char** argv)
       TrackerManager::GlobalTracker()->InitKinect();
       if(pcdInterface->Write())
 	{
-    std::cout << "passed write function" << std::endl;
+   // std::cout << "passed write function" << std::endl;
 	  TrackerManager::GlobalTracker()->GetOpenNIGrabber()->start();
 	  while(TrackerManager::GlobalTracker()->GetOpenNIGrabber()->isRunning())
 	  {
@@ -64,7 +64,7 @@ int main (int argc, char** argv)
     }
   else
     {
-      cout << "At the files\n";
+      //cout << "At the files\n";
 	  while(pcdInterface->fileIndex < pcdInterface->maxFiles)
 	    {
 	      TrackerManager::GlobalTracker()->GetVisualizer()->spinOnce();

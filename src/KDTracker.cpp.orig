@@ -16,7 +16,11 @@ KDTracker::KDTracker(std::string handPath, std::string objectPath)
   region_color_threshold = 81;
   min_cluster_size = 1;
   max_cluster_size = 50000;
+<<<<<<< Updated upstream
   threshold = 2.7;
+=======
+  threshold = 2.7;//used for object hue getter
+>>>>>>> Stashed changes
 
   hand_cloud.reset(new PointCloud<PointXYZRGBA>);
   hand_object_cloud.reset(new PointCloud<PointXYZRGBA>);
@@ -43,8 +47,13 @@ PointCloud<PointXYZRGBA>::Ptr
 KDTracker::Execute(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
 {
   //filterSetOfPcdWithClusters("dataset/hand-ball/",50,hand_h,object_h,1);
+<<<<<<< Updated upstream
   //ReturnCloud = filterSetOfPcdWithClusters(cloud_in,hand_h,object_h,0);
   ReturnCloud = filterSetOfPcdWithPoints(cloud_in,hand_h,object_h,0);
+=======
+  ReturnCloud = filterSetOfPcdWithPoints(cloud_in,hand_h,object_h,1);
+  //ReturnCloud = filterSetOfPcdWithPoints(cloud_in,hand_h,object_h,0);
+>>>>>>> Stashed changes
   return ReturnCloud;
 }
 

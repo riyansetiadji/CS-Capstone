@@ -14,7 +14,7 @@ Octree::Execute(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
   _octree.setInputCloud(cloud_in);
   _octree.addPointsFromInputCloud();
 
-  octree::OctreePointCloud<PointXYZRGBA>::LeafNodeIterator itL(_octree); 
+  //octree::OctreePointCloud<PointXYZRGBA>::LeafNodeIterator itL(_octree); 
 
   /*std::vector<int> indexVector;
   unsigned int leafCount = 0;

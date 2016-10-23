@@ -7,13 +7,13 @@ PCLUtilities::PCLUtilities()
 
 }
 
-PointCloud<PointXYZRGBA>::Ptr PCLUtilities::CloudDifference(PointCloud<PointXYZRGBA>::Ptr total, 
+PCLUtilities::PointCloud<PointXYZRGBA>::Ptr CloudDifference(PointCloud<PointXYZRGBA>::Ptr total, 
 							    PointCloud<PointXYZRGBA>::Ptr sub)
 {
-  PointCloud<PointXYZRGBA>::Ptr difference (new PointCloud<PointXYZRGBA>);
+  PointCloud<PointXYZRGBA> difference (new PointCloud<PointXYZRGBA>);
 
   ExtractIndices<PointXYZRGBA> extract;
-  //PointIndices<PointsXYZRGBA> inliers (new PointIndices());
+  PointIndices<PointsXYZRGBA> inliers (new PointIndices());
 
   extract.setInputCloud(total);
   //extract.setIndices(inliers);

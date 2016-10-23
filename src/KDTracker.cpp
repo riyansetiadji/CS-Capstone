@@ -11,10 +11,10 @@ KDTracker::KDTracker(std::string handPath, std::string objectPath)
   object_h = 0.0;
   object_s = 0.0;
   object_v = 0.0;
-  distance_threshold = 80;
-  point_color_threshold = 81;
-  region_color_threshold = 81;
-  min_cluster_size = 1;
+  distance_threshold = 7;
+  point_color_threshold = 7;
+  region_color_threshold = 7;
+  min_cluster_size = 1000;
   max_cluster_size = 50000;
   threshold = 2.7;
 
@@ -43,8 +43,8 @@ PointCloud<PointXYZRGBA>::Ptr
 KDTracker::Execute(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
 {
   //filterSetOfPcdWithClusters("dataset/hand-ball/",50,hand_h,object_h,1);
-  //ReturnCloud = filterSetOfPcdWithClusters(cloud_in,hand_h,object_h,0);
-  ReturnCloud = filterSetOfPcdWithPoints(cloud_in,hand_h,object_h,0);
+  ReturnCloud = filterSetOfPcdWithClusters(cloud_in,hand_h,object_h,0);
+  //ReturnCloud = filterSetOfPcdWithPoints(cloud_in,hand_h,object_h,0);
   return ReturnCloud;
 }
 
@@ -290,6 +290,7 @@ PointCloud<PointXYZRGBA>::Ptr KDTracker::filterSetOfPcdWithClusters(const PointC
   PointCloud<PointXYZRGBA>::Ptr tmp_cloud(new PointCloud<PointXYZRGBA>);
   PointCloud<PointXYZRGBA>::Ptr filtered_cloud(new PointCloud<PointXYZRGBA>);
   PointCloud<PointXYZRGBA>::Ptr segmented_cloud(new PointCloud<PointXYZRGBA>);
+  hand_subtraction.reset(new PointCloud<PointXYZRGBA>);
 
   //depth filter.
   IndicesPtr indices (new std::vector <int>);
@@ -355,14 +356,14 @@ PointCloud<PointXYZRGBA>::Ptr KDTracker::filterSetOfPcdWithClusters(const PointC
 	}
       else
 	{
-	  /*for(int j=0; j< clusters[i].indices.size(); j++)//object cloud
+	  for(int j=0; j< clusters[i].indices.size(); j++)//object cloud
 	    {
 	      cloud->points[clusters[i].indices[j]].r = 0;
 	      cloud->points[clusters[i].indices[j]].g = 255;
 	      cloud->points[clusters[i].indices[j]].b = 0;
                     		
-	      filtered_cloud->points.push_back(cloud->points[clusters[i].indices[j]]);
-	    }*/
+	      hand_subtraction->points.push_back(cloud->points[clusters[i].indices[j]]);
+	    }
 
 	}
       tmp_cloud->points.clear();
@@ -379,6 +380,7 @@ PointCloud<PointXYZRGBA>::Ptr KDTracker::filterSetOfPcdWithPoints(const PointClo
   //used for region segmentation
   PointCloud<PointXYZRGBA>::Ptr tmp_cloud(new PointCloud<PointXYZRGBA>);
   PointCloud<PointXYZRGBA>::Ptr segmented_cloud(new PointCloud<PointXYZRGBA>);
+  hand_subtraction.reset(new PointCloud<PointXYZRGBA>);
 
   for(int i=0; i < cloud->points.size(); i++)
     {
@@ -398,23 +400,15 @@ PointCloud<PointXYZRGBA>::Ptr KDTracker::filterSetOfPcdWithPoints(const PointClo
       float omitThreshold = .2;
       if(distanceToHand < distanceToObject)
     	{
-    	       
                 cloud->points[i].r = 0;
                 cloud->points[i].g = 255;
                 cloud->points[i].b = 0;
                                 
                 filtered_cloud->points.push_back(cloud->points[i]); 
-                   	
     	}
       else
-	    {
-          /*
-      	  cloud->points[i].r = 0;
-      	  cloud->points[i].g = 0;
-      	  cloud->points[i].b = 255;
-    	      */              		
-    	  //filtered_cloud->points.push_back(cloud->points[i]);
-    
+	{              
+	      hand_subtraction->points.push_back(cloud->points[i]);		
 	}
       tmp_cloud->points.clear();
 
@@ -424,6 +418,12 @@ PointCloud<PointXYZRGBA>::Ptr KDTracker::filterSetOfPcdWithPoints(const PointClo
   return PointFilter(filtered_cloud,handH,objectH);
   //return filtered_cloud;
 }
+
+PointCloud<PointXYZRGBA>::Ptr KDTracker::getObjectCloud()
+{
+  return hand_subtraction;
+}
+
 
 Eigen::Affine3f KDTracker::ComputeTransform()
 {

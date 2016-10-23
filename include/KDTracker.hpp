@@ -54,6 +54,7 @@ public:
 
   PointCloud<PointXYZRGBA>::Ptr hand_cloud;
   PointCloud<PointXYZRGBA>::Ptr hand_object_cloud;
+  PointCloud<PointXYZRGBA>::Ptr hand_subtraction;
   
   search::Search <PointXYZRGBA>::Ptr tree;
   
@@ -70,6 +71,8 @@ public:
   PointCloud<PointXYZRGBA>::Ptr PointFilter(const PointCloud<PointXYZRGBA>::Ptr &cloud,double handH, double objectH);
   PointCloud<PointXYZRGBA>::Ptr filterSetOfPcdWithClusters(const PointCloud<PointXYZRGBA>::Ptr &cloud,double handH,double objectH,int showcld);
   PointCloud<PointXYZRGBA>::Ptr filterSetOfPcdWithPoints(const PointCloud<PointXYZRGBA>::Ptr &cloud,double handH,double objectH,int showcld);
+
+  PointCloud<PointXYZRGBA>::Ptr getObjectCloud();
 };
 
 #endif

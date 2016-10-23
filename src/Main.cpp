@@ -23,6 +23,8 @@ int main (int argc, char** argv)
   CloudViewer* cViewer = new CloudViewer();  
   Tracker* TrackViewer = TrackerManager::GlobalTracker()->
     CreateTracker(cViewer, "CloudViewer", 'z', 125, 175, 215, 1, true);
+  Tracker* ObjectViewer = TrackerManager::GlobalTracker()->
+    CreateTracker(cViewer, "ObjectViewer", 'y', 125, 185, 15, 2, false);
 
   KDTracker* kdTracker = new KDTracker("../data/andy_hand.pcd", "../data/"+fileloc+"/"+fileloc+"10.pcd");
   Tracker* TrackHandFilter = TrackerManager::GlobalTracker()->
@@ -75,11 +77,12 @@ int main (int argc, char** argv)
 	      TrackerManager::GlobalTracker()->GetVisualizer()->spinOnce();
 	     TrackViewer->Track(pcdInterface->GetNextCloud());
 	      PointCloud<PointXYZRGBA>::Ptr handCloud = 
-		TrackParticleFilter->Track(pcdInterface->GetNextCloud());
+		TrackHandFilter->Track(pcdInterface->GetNextCloud());
+	      ObjectViewer->Track(kdTracker->getObjectCloud());
 	      PointCloud<PointXYZRGBA>::Ptr particleCloud = 
-		TrackHandFilter->Track(handCloud);
+		TrackParticleFilter->Track(kdTracker->getObjectCloud());
 	      PointCloud<PointXYZRGBA>::Ptr collideCloud =
-		TrackNaiveCollision->Track(particleCloud, handCloud);
+	      TrackNaiveCollision->Track(particleCloud, handCloud);
 	      boost::this_thread::sleep(boost::posix_time::milliseconds(milSeconds));
 	    }
     }

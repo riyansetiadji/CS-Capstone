@@ -11,12 +11,12 @@ KDTracker::KDTracker(std::string handPath, std::string objectPath)
   object_h = 0.0;
   object_s = 0.0;
   object_v = 0.0;
-  distance_threshold = .01;
-  point_color_threshold = .01;
-  region_color_threshold = .01;
-  min_cluster_size = 1200;
-  max_cluster_size = 36300;
-  threshold = .76;
+  distance_threshold = 80;
+  point_color_threshold = 81;
+  region_color_threshold = 81;
+  min_cluster_size = 1;
+  max_cluster_size = 50000;
+  threshold = 2.7;
 
   hand_cloud.reset(new PointCloud<PointXYZRGBA>);
   hand_object_cloud.reset(new PointCloud<PointXYZRGBA>);
@@ -43,8 +43,8 @@ PointCloud<PointXYZRGBA>::Ptr
 KDTracker::Execute(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
 {
   //filterSetOfPcdWithClusters("dataset/hand-ball/",50,hand_h,object_h,1);
-  ReturnCloud = filterSetOfPcdWithClusters(cloud_in,hand_h,object_h,0);
-  //ReturnCloud = filterSetOfPcdWithPoints(cloud_in,hand_h,object_h,0);
+  //ReturnCloud = filterSetOfPcdWithClusters(cloud_in,hand_h,object_h,0);
+  ReturnCloud = filterSetOfPcdWithPoints(cloud_in,hand_h,object_h,0);
   return ReturnCloud;
 }
 

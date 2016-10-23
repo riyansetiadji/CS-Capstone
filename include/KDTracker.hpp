@@ -67,7 +67,7 @@ public:
   void getAvgHSV(const PointCloud<PointXYZRGBA>::ConstPtr &cloud,double *h_avg, double *s_avg, double *v_avg, int showcld);
   void getAvgHSVForOnePoints(const PointCloud<PointXYZRGBA>::ConstPtr &cloud,double *h_avg, double *s_avg, double *v_avg,int showcld);
   void getObjectAvgHSV(const PointCloud<PointXYZRGBA>::ConstPtr &cloud,double hue,double *objectH, double *objectS,double *objectV,int showcld);
-  PointCloud<PointXYZRGBA>::Ptr PointFilter(const PointCloud<PointXYZRGBA>::Ptr &cloud);
+  PointCloud<PointXYZRGBA>::Ptr PointFilter(const PointCloud<PointXYZRGBA>::Ptr &cloud,double handH, double objectH);
   PointCloud<PointXYZRGBA>::Ptr filterSetOfPcdWithClusters(const PointCloud<PointXYZRGBA>::Ptr &cloud,double handH,double objectH,int showcld);
   PointCloud<PointXYZRGBA>::Ptr filterSetOfPcdWithPoints(const PointCloud<PointXYZRGBA>::Ptr &cloud,double handH,double objectH,int showcld);
 };

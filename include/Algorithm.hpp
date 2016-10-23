@@ -17,9 +17,18 @@ public:
   pcl::PointCloud<pcl::PointXYZRGBA>::Ptr ReturnCloud;
   
   Algorithm() {};
+  ~Algorithm(){}
   
   virtual pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
-  Execute(const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &) = 0;
+  Execute(const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &)
+  {}
+  
+  //Two arguments used for collision detection
+  virtual pcl::PointCloud<pcl::PointXYZRGBA>::Ptr
+  Execute(const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &, 
+	  const pcl::PointCloud<pcl::PointXYZRGBA>::Ptr &)
+  {}
+
   virtual Eigen::Affine3f ComputeTransform() = 0;
   virtual void PrintAlgorithm() = 0;
 };

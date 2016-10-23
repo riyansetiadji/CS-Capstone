@@ -3,6 +3,7 @@
 #include <TableSegmenter.hpp>
 #include <KDTracker.hpp>
 #include <ParticleFilter.hpp>
+#include <NaiveCollider.hpp>
 #include <CloudViewer.hpp>
 #include <PCDInterface.hpp>
 #include <string.h>
@@ -24,14 +25,18 @@ int main (int argc, char** argv)
     CreateTracker(cViewer, "CloudViewer", 'z', 125, 175, 215, 1, true);
 
   KDTracker* kdTracker = new KDTracker("../data/andy_hand.pcd", "../data/"+fileloc+"/"+fileloc+"10.pcd");
-  Tracker* TrackStar = TrackerManager::GlobalTracker()->
+  Tracker* TrackHandFilter = TrackerManager::GlobalTracker()->
     CreateTracker(kdTracker, "KDTracker", 'a', 9, 251, 2, 4, false);
  
   std::string file = "../data/bbq_pringles.pcd";
   std::string did = "666";
   ParticleFilter* pf = new ParticleFilter(file, did);
-  Tracker* TrackMarks = TrackerManager::GlobalTracker()->
+  Tracker* TrackParticleFilter = TrackerManager::GlobalTracker()->
     CreateTracker(pf, "ParticleFilter", 'b', 9, 0, 255, 2, false);
+
+  NaiveCollider* nc = new NaiveCollider(1.1f);
+  Tracker* TrackNaiveCollision = TrackerManager::GlobalTracker()->
+    CreateTracker(nc, "NaiveCollision", 'c', 255, 0, 15, 5, false);
  
   PCDInterface* pcdInterface = new PCDInterface(argv[2][0], std::atoi(argv[3]),fileloc);
   float milSeconds = std::atof(argv[4]);
@@ -57,8 +62,8 @@ int main (int argc, char** argv)
         while(TrackerManager::GlobalTracker()->GetOpenNIGrabber()->isRunning())
 	  {
 	    TrackerManager::GlobalTracker()->VisualizationLoop(true);
-	    TrackMarks->Track(TrackerManager::GlobalTracker()->GetKinectCloud());
-	    TrackStar->Track(TrackerManager::GlobalTracker()->GetKinectCloud());
+	    TrackParticleFilter->Track(TrackerManager::GlobalTracker()->GetKinectCloud());
+	    TrackHandFilter->Track(TrackerManager::GlobalTracker()->GetKinectCloud());
 	  }
 	}
     }
@@ -69,8 +74,12 @@ int main (int argc, char** argv)
 	    {
 	      TrackerManager::GlobalTracker()->GetVisualizer()->spinOnce();
 	     TrackViewer->Track(pcdInterface->GetNextCloud());
-	      TrackStar->Track(pcdInterface->GetNextCloud());
-	      TrackMarks->Track(pcdInterface->GetNextCloud());
+	      PointCloud<PointXYZRGBA>::Ptr handCloud = 
+		TrackParticleFilter->Track(pcdInterface->GetNextCloud());
+	      PointCloud<PointXYZRGBA>::Ptr particleCloud = 
+		TrackHandFilter->Track(handCloud);
+	      PointCloud<PointXYZRGBA>::Ptr collideCloud =
+		TrackNaiveCollision->Track(particleCloud, handCloud);
 	      boost::this_thread::sleep(boost::posix_time::milliseconds(milSeconds));
 	    }
     }

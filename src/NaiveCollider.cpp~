@@ -1,0 +1,25 @@
+#include <NaiveCollider.hpp>
+
+using namespace pcl;
+
+NaiveCollider::NaiveCollider()
+{
+ 
+}
+
+PointCloud<PointXYZRGBA>::Ptr
+NaiveCollider::Execute(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
+{
+  ReturnCloud = cloud_in;
+  return ReturnCloud;
+}
+
+Eigen::Affine3f NaiveCollider::ComputeTransform()
+{
+  return Eigen::Affine3f::Identity ();
+}
+
+void NaiveCollider::PrintAlgorithm()
+{
+  
+}

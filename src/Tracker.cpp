@@ -27,7 +27,7 @@ Tracker::Tracker(std::string trackerName, char callback,
     TrackerManager::GlobalTracker()->GetVisualizer()->registerKeyboardCallback(kb);
   }
 
-void Tracker::Track(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
+PointCloud<PointXYZRGBA>::Ptr Tracker::Track(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
 { 
   TargetCloud.reset(new PointCloud<PointXYZRGBA>);
   if(enabled)
@@ -51,7 +51,34 @@ void Tracker::Track(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
 	}
     }
       UpdateVisualizer();
+      return TargetCloud;
 }
+
+PointCloud<PointXYZRGBA>::Ptr Tracker::Track(const PointCloud<PointXYZRGBA>::Ptr &cloud_1,
+					     const PointCloud<PointXYZRGBA>::Ptr &cloud_2)
+{ 
+  TargetCloud.reset(new PointCloud<PointXYZRGBA>);
+  if(enabled)
+    {
+      if(Target == TARGET_UNKNOWN)
+	{
+	  TargetCloud = TrackerAlgorithm->Execute(cloud_1, cloud_2);
+	  //TrackerAlgorithm->ComputeTransform();
+	  //Target = TARGET_TRACKING;
+	}
+      else if(Target == TARGET_IDENTIFYING)
+	{
+	  //TrackerAlgorithm->ComputeTransform();
+	}
+      else
+	{
+	  //TrackerAlgorithm->ComputeTransform();
+	}
+    }
+      UpdateVisualizer();
+      return TargetCloud;
+}
+
 
 void Tracker::GetCallbackKey(const visualization::KeyboardEvent& event)
 {

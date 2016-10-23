@@ -29,11 +29,8 @@ protected:
   
   Tracker();
   Tracker(std::string, char, float, float, float, int, bool, float);
-  
-  PointCloud<PointXYZRGBA>::Ptr Track(const PointCloud<PointXYZRGBA>::Ptr &cloud_in);
-  PointCloud<PointXYZRGBA>::Ptr Track(const PointCloud<PointXYZRGBA>::Ptr &cloud_1,
-				      const PointCloud<PointXYZRGBA>::Ptr &cloud_2);
-
+  void Track(const PointCloud<PointXYZRGBA>::Ptr &cloud_in);
+  void 
   void GetCallbackKey(const visualization::KeyboardEvent &);
   
 private:

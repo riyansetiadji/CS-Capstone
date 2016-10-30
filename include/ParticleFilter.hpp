@@ -50,6 +50,7 @@ public:
   bool new_cloud_;
   double downsampling_grid_size_;
   int counter;
+  bool model_flag;
   std::string device_id;
 
   ParticleFilter(std::string, std::string);
@@ -57,6 +58,7 @@ public:
   Execute(const PointCloud<PointXYZRGBA>::Ptr &);
   Eigen::Affine3f ComputeTransform();
   void PrintAlgorithm();
+  void setModel(const PointCloud<PointXYZRGBA>::Ptr &);
 
   void GridSampleApprox(const PointCloud<PointXYZRGBA>::ConstPtr &cloud, PointCloud<PointXYZRGBA> &result, double leaf_size);
   void FilterPassThrough(const PointCloud<PointXYZRGBA>::Ptr &, PointCloud<PointXYZRGBA> &);

@@ -14,7 +14,6 @@ ParticleFilter::ParticleFilter(std::string filename, std::string d_id)
   device_id = d_id;
   counter = 0;
   new_cloud_ = false;
-  model_flag = false;
 
   downsampling_grid_size_ =  0.002;
 
@@ -68,21 +67,14 @@ ParticleFilter::ParticleFilter(std::string filename, std::string d_id)
   coherence->setMaximumDistance (0.01);
 
   tracker_->setCloudCoherence (coherence);
-  
 
-  
+ 
 
 }
 
 PointCloud<PointXYZRGBA>::Ptr
 ParticleFilter::Execute(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
 {
-  if(!model_flag){
-
-    setModel(cloud_in);
-    model_flag = true;
-  }
-
   //std::cout << cloud_in->points.size();
   cloud_pass_.reset (new PointCloud<PointXYZRGBA>);
   cloud_pass_downsampled_.reset (new PointCloud<PointXYZRGBA>);
@@ -136,7 +128,7 @@ bool ParticleFilter::DrawParticles()
   pcl::transformPointCloud<PointXYZRGBA> (*(tracker_->getReferenceCloud ()), *result_cloud, transformation);
 
   //Draw blue model reference point cloud
-    pcl::visualization::PointCloudColorHandlerCustom<PointXYZRGBA> blue_color (result_cloud, 255, 255, 5);
+    pcl::visualization::PointCloudColorHandlerCustom<PointXYZRGBA> blue_color (result_cloud, 0, 255, 255);
 boost::shared_ptr<visualization::PCLVisualizer> visualizer = 
     TrackerManager::GlobalTracker()->GetVisualizer();
  std::string name = "pringles curley mustache";
@@ -157,23 +149,8 @@ void ParticleFilter::PrintAlgorithm()
 {
   
 }
-void ParticleFilter::setModel(const PointCloud<PointXYZRGBA>::Ptr &cloud_in){
-  //prepare the model of tracker's target
-  Eigen::Vector4f c;
-  Eigen::Vector4f d;
-  Eigen::Affine3f trans = Eigen::Affine3f::Identity ();
-  PointCloud<PointXYZRGBA>::Ptr transed_ref (new PointCloud<PointXYZRGBA>);
-  PointCloud<PointXYZRGBA>::Ptr transed_ref_downsampled (new PointCloud<PointXYZRGBA>);
 
-  compute3DCentroid<PointXYZRGBA> (*cloud_in, c);
-  compute3DCentroid<PointXYZRGBA> (*target_cloud, d);
+void setModel()
+{
 
-  c = c-d;
-  trans.translation ().matrix () = Eigen::Vector3f (c[0], c[1], c[2]);
-  transformPointCloud<PointXYZRGBA> (*target_cloud, *transed_ref, trans);
-  GridSampleApprox (transed_ref, *transed_ref_downsampled, downsampling_grid_size_);
-
-  //set reference model and trans
-  tracker_->setReferenceCloud (transed_ref_downsampled);
-  tracker_->setTrans (trans);
 }

@@ -31,8 +31,7 @@ TrackerManager::TrackerManager()
 void TrackerManager::InitKinect()
 {
   std::string device_id = "";
-  kinectInterface = new OpenNIGrabber(device_id, OpenNIGrabber::OpenNI_QVGA_30Hz, 
-					    OpenNIGrabber::OpenNI_QVGA_30Hz);
+  kinectInterface = new OpenNIGrabber(device_id, OpenNIGrabber::OpenNI_QVGA_30Hz, OpenNIGrabber::OpenNI_QVGA_30Hz);
 
    boost::function<void(const PointCloud<PointXYZRGBA>::ConstPtr &)> functionPointerNamedF;
    functionPointerNamedF = boost::bind (&TrackerManager::CloudGrabber, this, _1);

@@ -5,6 +5,7 @@
 #include <ParticleFilter.hpp>
 #include <NaiveCollider.hpp>
 #include <CloudViewer.hpp>
+#include <VoxelFilter.hpp>
 #include <PCDInterface.hpp>
 #include <string.h>
 #include <string>
@@ -20,11 +21,15 @@ int main (int argc, char** argv)
    std::string fileloc = argv[5];
   cout << kinectInput << std::endl;
   
-  CloudViewer* cViewer = new CloudViewer();  
+  CloudViewer* cViewer = new CloudViewer();
   Tracker* TrackViewer = TrackerManager::GlobalTracker()->
     CreateTracker(cViewer, "CloudViewer", 'z', 125, 175, 215, 1, true);
   Tracker* ObjectViewer = TrackerManager::GlobalTracker()->
     CreateTracker(cViewer, "ObjectViewer", 'y', 125, 185, 15, 2, false);
+
+  VoxelFilter* vFilter = new VoxelFilter(0.01, 0.01, 0.01);
+  Tracker* TrackVoxelFilter = TrackerManager::GlobalTracker()->
+    CreateTracker(vFilter, "VoxelTracker", 'v', 5, 225, 195, 3, false);
 
   KDTracker* kdTracker = new KDTracker("../data/andy_hand.pcd", "../data/"+fileloc+"/"+fileloc+"10.pcd");
   Tracker* TrackHandFilter = TrackerManager::GlobalTracker()->
@@ -75,9 +80,12 @@ int main (int argc, char** argv)
 	  while(pcdInterface->fileIndex < pcdInterface->maxFiles)
 	    {
 	      TrackerManager::GlobalTracker()->GetVisualizer()->spinOnce();
-	     TrackViewer->Track(pcdInterface->GetNextCloud());
-	      PointCloud<PointXYZRGBA>::Ptr handCloud = 
-		TrackHandFilter->Track(pcdInterface->GetNextCloud());
+	     PointCloud<PointXYZRGBA>::Ptr kinectCloud =
+	      TrackViewer->Track(pcdInterface->GetNextCloud());
+	     PointCloud<PointXYZRGBA>::Ptr filterCloud = 
+	       TrackVoxelFilter->Track(kinectCloud);
+	     PointCloud<PointXYZRGBA>::Ptr handCloud = 
+		TrackHandFilter->Track(filterCloud);
 	      ObjectViewer->Track(kdTracker->getObjectCloud());
 	      PointCloud<PointXYZRGBA>::Ptr particleCloud = 
 		TrackParticleFilter->Track(kdTracker->getObjectCloud());

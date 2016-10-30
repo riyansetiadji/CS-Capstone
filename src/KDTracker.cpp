@@ -1,8 +1,8 @@
 #include <KDTracker.hpp>
+#include <pcl/filters/extract_indices.h>
 
 using namespace pcl;
 using namespace std;
-
 KDTracker::KDTracker(std::string handPath, std::string objectPath)
 {
   hand_h= 0.0;
@@ -11,10 +11,10 @@ KDTracker::KDTracker(std::string handPath, std::string objectPath)
   object_h = 0.0;
   object_s = 0.0;
   object_v = 0.0;
-  distance_threshold = 7;
-  point_color_threshold = 7;
-  region_color_threshold = 7;
-  min_cluster_size = 1000;
+  distance_threshold = 12;
+  point_color_threshold = 12;
+  region_color_threshold = 12;
+  min_cluster_size = 100;
   max_cluster_size = 50000;
   threshold = 2.7;
 
@@ -42,12 +42,55 @@ KDTracker::KDTracker(std::string handPath, std::string objectPath)
 PointCloud<PointXYZRGBA>::Ptr
 KDTracker::Execute(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
 {
-  //filterSetOfPcdWithClusters("dataset/hand-ball/",50,hand_h,object_h,1);
-  ReturnCloud = filterSetOfPcdWithClusters(cloud_in,hand_h,object_h,0);
+  //ReturnCloud = filter_table(cloud_in);
+  ReturnCloud = filterSetOfPcdWithClusters(filter_table(cloud_in),hand_h,object_h,0);
   //ReturnCloud = filterSetOfPcdWithPoints(cloud_in,hand_h,object_h,0);
   return ReturnCloud;
 }
+PointCloud<PointXYZRGBA>::Ptr KDTracker::filter_table( const PointCloud<PointXYZRGBA>::ConstPtr &cloud_in)
+{
+  PointCloud<PointXYZRGBA>::Ptr filtered_cloud (new PointCloud<PointXYZRGBA>);
+ PointCloud<PointXYZRGBA>::Ptr tmp_cloud (new PointCloud<PointXYZRGBA>);
 
+  pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
+  pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
+  // Create the segmentation object
+  pcl::SACSegmentation<pcl::PointXYZRGBA> seg;
+  // Optional
+  seg.setOptimizeCoefficients (true);
+  // Mandatory
+  seg.setModelType (pcl::SACMODEL_PLANE);
+  seg.setMethodType (pcl::SAC_RANSAC);
+  seg.setDistanceThreshold (0.01);
+
+  seg.setInputCloud (cloud_in);
+  seg.segment (*inliers, *coefficients);
+
+  if (inliers->indices.size () == 0)
+  {
+    PCL_ERROR ("Could not estimate a planar model for the given dataset.");
+    //return (-1);
+  }
+
+  
+
+ 
+ 
+
+  pcl::ExtractIndices<PointXYZRGBA> eifilter (true); // Initializing with true will allow us to extract the removed indices
+  eifilter.setInputCloud (cloud_in);
+  eifilter.setIndices (inliers);
+  eifilter.setNegative(true);
+  eifilter.filter (*tmp_cloud);
+  // The resulting cloud_out contains all points of cloud_in that are indexed by indices_in
+ 
+  // The indices_rem array indexes all points of cloud_in that are not indexed by indices_in
+  
+  // for (size_t i = 0; i < indices_rem.size (); ++i)
+     //filtered_cloud->points.push_back(cloud_in->points[indices_rem[i]]);
+return tmp_cloud;
+
+}
 void KDTracker::RGBToHSV(float r, float g, float b, float *h, float *s, float *v)
 {
   float max = r;
@@ -319,7 +362,7 @@ PointCloud<PointXYZRGBA>::Ptr KDTracker::filterSetOfPcdWithClusters(const PointC
   segmented_cloud = reg.getColoredCloudRGBA ();
             
   int clusterIncluded = 0;
-
+  std::cout<<"Cluster Size: "<<clusters.size()<<std::endl;
   for(int i =0; i < clusters.size(); i++)
     {
 
@@ -369,6 +412,7 @@ PointCloud<PointXYZRGBA>::Ptr KDTracker::filterSetOfPcdWithClusters(const PointC
       tmp_cloud->points.clear();
     }
  std::cout<<"hand cloud point size: "<<filtered_cloud->points.size()<<std::endl;
+ std::cout<<"object cloud point size: "<<hand_subtraction->points.size()<<std::endl;
   return filtered_cloud;
 }
 

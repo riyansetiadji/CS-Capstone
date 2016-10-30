@@ -27,7 +27,7 @@ int main (int argc, char** argv)
   Tracker* ObjectViewer = TrackerManager::GlobalTracker()->
     CreateTracker(cViewer, "ObjectViewer", 'y', 125, 185, 15, 2, false);
 
-  VoxelFilter* vFilter = new VoxelFilter(0.01, 0.01, 0.01);
+  VoxelFilter* vFilter = new VoxelFilter(0.005, 0.005, 0.005);
   Tracker* TrackVoxelFilter = TrackerManager::GlobalTracker()->
     CreateTracker(vFilter, "VoxelTracker", 'v', 5, 225, 195, 3, false);
 

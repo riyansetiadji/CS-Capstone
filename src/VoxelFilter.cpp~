@@ -1,0 +1,30 @@
+#include<VoxelFilter.hpp>
+
+using namespace pcl;
+
+VoxelFilter::VoxelFilter(float x, y, z)
+{
+  leafX = x;
+  leafY = y;
+  leafZ = z;
+}
+
+PointCloud<PointXYZRGBA>::Ptr
+VoxelFilter::Execute(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
+{
+  pcl::VoxelGrid<pcl::PCLPointCloud2> downsampler;
+  downsampler.setInputCloud (cloud_in);
+  downsampler.setLeafSize (leafX, leafY, leafZ);
+  downsampler.filter (*ReturnCloud);
+  return ReturnCloud;
+}
+
+Eigen::Affine3f VoxelFilter::ComputeTransform()
+{
+  return Eigen::Affine3f::Identity ();
+}
+
+void VoxelFilter::PrintAlgorithm()
+{
+  
+}

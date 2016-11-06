@@ -11,6 +11,7 @@ Tracker::Tracker(std::string trackerName, char callback,
 		 float r, float g, float b, int ps, bool en, float h)
   {
     TargetTransform = Eigen::Affine3f::Identity ();
+    TargetCloud.reset(new PointCloud<PointXYZRGBA>);
 
     callbackKey = callback;
     visualizerTextHeight = h;
@@ -19,10 +20,12 @@ Tracker::Tracker(std::string trackerName, char callback,
     red = r; green = g; blue = b;
     pointSize = ps;
     enabled = en;
+    lastComputation = 0;
 
     boost::function<void(const visualization::KeyboardEvent &)> kb;
     kb = boost::bind (&Tracker::GetCallbackKey, this, _1);
     TrackerManager::GlobalTracker()->GetVisualizer()->registerKeyboardCallback(kb);
+    UpdateVisualizer();
   }
 
 //Calling this function effectively starts tracking by instantiating the thread
@@ -45,12 +48,14 @@ PointCloud<PointXYZRGBA>::Ptr Tracker::Track(const PointCloud<PointXYZRGBA>::Ptr
       if(!cloud_in->points.empty())
 	{
 	  //boost::this_thread::sleep(boost::posix_time::milliseconds(milSeconds));
+	  double start = getTime ();
 	  TargetCloud = TrackerAlgorithm->Execute(cloud_in);
-	  //TrackerAlgorithm->ComputeTransform();
+	  double end = getTime ();
+	  lastComputation = (end - start)*1000;
+	  UpdateVisualizer();
 	}
     }
-      UpdateVisualizer();
-      return TargetCloud;
+    return TargetCloud;
 }
 
 PointCloud<PointXYZRGBA>::Ptr Tracker::Track(const PointCloud<PointXYZRGBA>::Ptr &cloud_1,
@@ -59,11 +64,15 @@ PointCloud<PointXYZRGBA>::Ptr Tracker::Track(const PointCloud<PointXYZRGBA>::Ptr
   TargetCloud.reset(new PointCloud<PointXYZRGBA>);
   if(enabled)
     {
-	  //boost::this_thread::sleep(boost::posix_time::milliseconds(milSeconds));
+      //boost::this_thread::sleep(boost::posix_time::milliseconds(milSeconds));
+      double start = getTime ();
       TargetCloud = TrackerAlgorithm->Execute(cloud_1, cloud_2);
-    }
+      double end = getTime ();
+      lastComputation = (end - start)*1000;
       UpdateVisualizer();
-      return TargetCloud;
+    }
+    
+    return TargetCloud;
 }
 
 
@@ -100,5 +109,5 @@ void Tracker::PrintCloud()
     TrackerManager::GlobalTracker()->GetVisualizer();
   std::string shapeString (1, callbackKey);
   visualizer->removeShape (shapeString);
-  visualizer->addText ((boost::format (name + " tracking %d points. Toggle key: " + callbackKey) % TargetCloud->points.size ()).str (), 10, visualizerTextHeight, 15, 1.0, 1.0, 1.0, shapeString);
+  visualizer->addText ((boost::format ("%s tracking %d points at %f ms. Toggle key: %c") % name % TargetCloud->points.size () % lastComputation % callbackKey).str(), 10, visualizerTextHeight, 15, 1.0, 1.0, 1.0, shapeString);
 }

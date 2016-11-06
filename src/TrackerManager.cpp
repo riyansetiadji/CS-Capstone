@@ -22,7 +22,7 @@ TrackerManager::TrackerManager()
    visualizer.reset(new visualization::PCLVisualizer ("Tracking Viewer"));	
    visualizer->registerKeyboardCallback(kb);
 
-   trackerHeight = 0;
+   trackerHeight = 1050;
    visualizer->setSize (1920, 1080);
    visualizer->addCoordinateSystem(0.1);
    visualizer->initCameraParameters();
@@ -62,10 +62,7 @@ void TrackerManager::CloudGrabber(const PointCloud<PointXYZRGBA>::ConstPtr &clou
 //This function is registered to OpenNI, and begins calling the Tracking algorithms
 void TrackerManager::ProcessingLoop(const PointCloud<PointXYZRGBA>::ConstPtr &cloud_in)
 {
-  double start = getTime ();
-
-  double end = getTime ();
-  computationTime = (end - start)*1000;
+  
 }
 
 //This function should step through the linked list every frame

@@ -66,7 +66,7 @@ class TrackerManager
   {
     Tracker* track = new Tracker(name, key, r, g, b, size, en, trackerHeight);
     track->TrackerAlgorithm = alg;
-    trackerHeight += 10;
+    trackerHeight -= 20;
     return track;
   }
 

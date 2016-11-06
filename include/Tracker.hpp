@@ -23,9 +23,10 @@ protected:
   Algorithm *TrackerAlgorithm;
   boost::thread trackerThread;
   float red, green, blue; //Colors for visualization
+  float lastComputation;
 
   PointCloud<PointXYZRGBA>::Ptr InputCloud;
-PointCloud<PointXYZRGBA>::Ptr ColliderCloud;
+  PointCloud<PointXYZRGBA>::Ptr ColliderCloud;
   PointCloud<PointXYZRGBA>::Ptr TargetCloud;
   
   Tracker();

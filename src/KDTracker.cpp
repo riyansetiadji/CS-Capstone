@@ -43,7 +43,7 @@ PointCloud<PointXYZRGBA>::Ptr
 KDTracker::Execute(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
 {
   //ReturnCloud = filter_table(cloud_in);
-  ReturnCloud = filterSetOfPcdWithClusters(filter_table(cloud_in),hand_h,object_h,0);
+  ReturnCloud = filterSetOfPcdWithClusters(cloud_in,hand_h,object_h,0);
   //ReturnCloud = filterSetOfPcdWithPoints(cloud_in,hand_h,object_h,0);
   return ReturnCloud;
 }

@@ -16,7 +16,7 @@ ParticleFilter::ParticleFilter(std::string filename, std::string d_id)
   new_cloud_ = false;
   model_flag = false;
 
-  downsampling_grid_size_ =  0.002;
+  downsampling_grid_size_ =  0.01;
 
   std::vector<double> default_step_covariance = std::vector<double> (6, 0.015 * 0.015);
   default_step_covariance[3] *= 40.0;
@@ -162,18 +162,21 @@ void ParticleFilter::setModel(const PointCloud<PointXYZRGBA>::Ptr &cloud_in){
   Eigen::Vector4f c;
   Eigen::Vector4f d;
   Eigen::Affine3f trans = Eigen::Affine3f::Identity ();
+  Eigen::Affine3f modelTrans = Eigen::Affine3f::Identity ();
   PointCloud<PointXYZRGBA>::Ptr transed_ref (new PointCloud<PointXYZRGBA>);
   PointCloud<PointXYZRGBA>::Ptr transed_ref_downsampled (new PointCloud<PointXYZRGBA>);
 
   compute3DCentroid<PointXYZRGBA> (*cloud_in, c);
   compute3DCentroid<PointXYZRGBA> (*target_cloud, d);
 
-  c = c-d;
+  Eigen::Vector4f e = c-d;
+
   trans.translation ().matrix () = Eigen::Vector3f (c[0], c[1], c[2]);
-  transformPointCloud<PointXYZRGBA> (*target_cloud, *transed_ref, trans);
+  modelTrans.translation().matrix()= Eigen::Vector3f (e[0], e[1], e[2]); 
+  transformPointCloud<PointXYZRGBA> (*target_cloud, *transed_ref, modelTrans);
   GridSampleApprox (transed_ref, *transed_ref_downsampled, downsampling_grid_size_);
 
   //set reference model and trans
   tracker_->setReferenceCloud (transed_ref_downsampled);
-  tracker_->setTrans (trans);
+  //tracker_->setTrans (trans);
 }

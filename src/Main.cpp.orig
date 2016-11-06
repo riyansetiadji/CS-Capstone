@@ -27,23 +27,27 @@ int main (int argc, char** argv)
   Tracker* ObjectViewer = TrackerManager::GlobalTracker()->
     CreateTracker(cViewer, "ObjectViewer", 'y', 125, 185, 15, 2, false);
 
+<<<<<<< HEAD
   VoxelFilter* vFilter = new VoxelFilter(0.009, 0.009, 0.009);
+=======
+  VoxelFilter* vFilter = new VoxelFilter(0.005, 0.005, 0.005);
+>>>>>>> master
   Tracker* TrackVoxelFilter = TrackerManager::GlobalTracker()->
     CreateTracker(vFilter, "VoxelTracker", 'v', 5, 225, 195, 3, false);
 
   KDTracker* kdTracker = new KDTracker("../data/andy_hand.pcd", "../data/"+fileloc+"/"+fileloc+"10.pcd");
   Tracker* TrackHandFilter = TrackerManager::GlobalTracker()->
-    CreateTracker(kdTracker, "KDTracker", 'a', 9, 251, 2, 5, false);
+    CreateTracker(kdTracker, "KDTracker", 'a', 9, 251, 2, 4, false);
  
-  std::string file = "../data/bbq.pcd";
+  std::string file = "../data/bbq_pringles.pcd";
   std::string did = "666";
   ParticleFilter* pf = new ParticleFilter(file, did);
   Tracker* TrackParticleFilter = TrackerManager::GlobalTracker()->
-    CreateTracker(pf, "ParticleFilter", 'b', 9, 0, 255, 5, false);
+    CreateTracker(pf, "ParticleFilter", 'b', 9, 0, 255, 2, false);
 
   NaiveCollider* nc = new NaiveCollider(1.1f);
   Tracker* TrackNaiveCollision = TrackerManager::GlobalTracker()->
-    CreateTracker(nc, "NaiveCollision", 'c', 255, 0, 15, 15, false);
+    CreateTracker(nc, "NaiveCollision", 'c', 255, 0, 15, 5, false);
  
   PCDInterface* pcdInterface = new PCDInterface(argv[2][0], std::atoi(argv[3]),fileloc);
   float milSeconds = std::atof(argv[4]);

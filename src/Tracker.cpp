@@ -4,14 +4,12 @@ using namespace pcl;
 
 Tracker::Tracker()
   {
-    Target = TARGET_UNKNOWN;
     TargetTransform = Eigen::Affine3f::Identity ();
   }
 
 Tracker::Tracker(std::string trackerName, char callback, 
 		 float r, float g, float b, int ps, bool en, float h)
   {
-    Target = TARGET_UNKNOWN;
     TargetTransform = Eigen::Affine3f::Identity ();
 
     callbackKey = callback;
@@ -27,6 +25,18 @@ Tracker::Tracker(std::string trackerName, char callback,
     TrackerManager::GlobalTracker()->GetVisualizer()->registerKeyboardCallback(kb);
   }
 
+//Calling this function effectively starts tracking by instantiating the thread
+//We can add parameters to initialize Input and Collision Clouds if we need to make
+//Track a parameterless function. Cannot have overloaded Collision version in that case
+//And need to check for Collision cloud empty of make Collision Algorithm and type check
+//Algorithm before execution
+void Tracker::StartTracking()
+{
+  //We need to make Track parameterless, and then bind specific Tracker clouds as input
+  //As we are already doing
+  //trackerThread = new boost::thread(boost::bind (&TrackerManager::Track, this, _1));
+}
+
 PointCloud<PointXYZRGBA>::Ptr Tracker::Track(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
 { 
   TargetCloud.reset(new PointCloud<PointXYZRGBA>);
@@ -34,20 +44,9 @@ PointCloud<PointXYZRGBA>::Ptr Tracker::Track(const PointCloud<PointXYZRGBA>::Ptr
     {
       if(!cloud_in->points.empty())
 	{
-	  if(Target == TARGET_UNKNOWN)
-	    {
-	      TargetCloud = TrackerAlgorithm->Execute(cloud_in);
-	      //TrackerAlgorithm->ComputeTransform();
-	      //Target = TARGET_TRACKING;
-	    }
-	  else if(Target == TARGET_IDENTIFYING)
-	    {
-	      //TrackerAlgorithm->ComputeTransform();
-	    }
-	  else
-	    {
-	      //TrackerAlgorithm->ComputeTransform();
-	    }
+	  //boost::this_thread::sleep(boost::posix_time::milliseconds(milSeconds));
+	  TargetCloud = TrackerAlgorithm->Execute(cloud_in);
+	  //TrackerAlgorithm->ComputeTransform();
 	}
     }
       UpdateVisualizer();
@@ -60,20 +59,8 @@ PointCloud<PointXYZRGBA>::Ptr Tracker::Track(const PointCloud<PointXYZRGBA>::Ptr
   TargetCloud.reset(new PointCloud<PointXYZRGBA>);
   if(enabled)
     {
-      if(Target == TARGET_UNKNOWN)
-	{
-	  TargetCloud = TrackerAlgorithm->Execute(cloud_1, cloud_2);
-	  //TrackerAlgorithm->ComputeTransform();
-	  //Target = TARGET_TRACKING;
-	}
-      else if(Target == TARGET_IDENTIFYING)
-	{
-	  //TrackerAlgorithm->ComputeTransform();
-	}
-      else
-	{
-	  //TrackerAlgorithm->ComputeTransform();
-	}
+	  //boost::this_thread::sleep(boost::posix_time::milliseconds(milSeconds));
+      TargetCloud = TrackerAlgorithm->Execute(cloud_1, cloud_2);
     }
       UpdateVisualizer();
       return TargetCloud;

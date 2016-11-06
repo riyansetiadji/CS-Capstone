@@ -22,22 +22,68 @@ Tracker::Tracker(std::string trackerName, char callback,
     enabled = en;
     lastComputation = 0;
 
+    loopCounter = 1;
+    threadLatency = 100;
+
     boost::function<void(const visualization::KeyboardEvent &)> kb;
     kb = boost::bind (&Tracker::GetCallbackKey, this, _1);
     TrackerManager::GlobalTracker()->GetVisualizer()->registerKeyboardCallback(kb);
     UpdateVisualizer();
   }
 
-//Calling this function effectively starts tracking by instantiating the thread
-//We can add parameters to initialize Input and Collision Clouds if we need to make
-//Track a parameterless function. Cannot have overloaded Collision version in that case
-//And need to check for Collision cloud empty of make Collision Algorithm and type check
-//Algorithm before execution
+void Tracker::SetLoopCounter(int ll)
+{
+  loopCounter = ll;
+}
+
+void Tracker::SetThreadLatency(float tt)
+{
+  threadLatency = tt;
+}
+
 void Tracker::StartTracking()
 {
-  //We need to make Track parameterless, and then bind specific Tracker clouds as input
-  //As we are already doing
-  //trackerThread = new boost::thread(boost::bind (&TrackerManager::Track, this, _1));
+  if(ColliderCloud == NULL)
+    trackerThread = new boost::thread(boost::bind (&Tracker::ThreadedTrack, this));
+  else
+    trackerThread = new boost::thread(boost::bind (&Tracker::ThreadedCollision, this));
+}
+
+void Tracker::ThreadedTrack()
+{
+  //boost::this_thread::sleep(boost::posix_time::milliseconds(threadLatency));
+  if(enabled)
+    {
+      TargetCloud.reset(new PointCloud<PointXYZRGBA>);
+      double start = getTime ();
+      PointCloud<PointXYZRGBA>::Ptr pc = TrackerAlgorithm->Execute(targetTracker->TargetCloud);
+      for(int i = 0; i < pc->points.size(); i++)
+	{
+	  TargetCloud->points.push_back(pc->points[i]);
+	  /*TargetCloud->points[i].y = pc->points[i].y;
+	  TargetCloud->points[i].z = pc->points[i].z;
+	  TargetCloud->points[i].r = pc->points[i].r;
+	  TargetCloud->points[i].g = pc->points[i].g;
+	  TargetCloud->points[i].b = pc->points[i].b;*/
+	}
+      double end = getTime ();
+      lastComputation = (end - start)*1000;
+      UpdateVisualizer();
+    }
+}
+
+void Tracker::ThreadedCollision()
+{
+  //boost::this_thread::sleep(boost::posix_time::milliseconds(threadLatency));
+  if(enabled)
+    {
+      //TargetCloud.reset(new PointCloud<PointXYZRGBA>);
+      double start = getTime ();
+      TargetCloud = TrackerAlgorithm->Execute(InputCloud, ColliderCloud);
+      double end = getTime ();
+      lastComputation = (end - start)*1000;
+      UpdateVisualizer();
+    }
 }
 
 PointCloud<PointXYZRGBA>::Ptr Tracker::Track(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
@@ -47,9 +93,18 @@ PointCloud<PointXYZRGBA>::Ptr Tracker::Track(const PointCloud<PointXYZRGBA>::Ptr
     {
       if(!cloud_in->points.empty())
 	{
-	  //boost::this_thread::sleep(boost::posix_time::milliseconds(milSeconds));
 	  double start = getTime ();
-	  TargetCloud = TrackerAlgorithm->Execute(cloud_in);
+	  //TargetCloud = TrackerAlgorithm->Execute(cloud_in);
+	  PointCloud<PointXYZRGBA>::Ptr pc = TrackerAlgorithm->Execute(targetTracker->TargetCloud);
+      for(int i = 0; i < pc->points.size(); i++)
+	{
+	  TargetCloud->points.push_back(pc->points[i]);
+	  /*TargetCloud->points[i].y = pc->points[i].y;
+	  TargetCloud->points[i].z = pc->points[i].z;
+	  TargetCloud->points[i].r = pc->points[i].r;
+	  TargetCloud->points[i].g = pc->points[i].g;
+	  TargetCloud->points[i].b = pc->points[i].b;*/
+	}
 	  double end = getTime ();
 	  lastComputation = (end - start)*1000;
 	  UpdateVisualizer();

@@ -21,10 +21,15 @@ protected:
   int Target, pointSize;
   Eigen::Affine3f TargetTransform;
   Algorithm *TrackerAlgorithm;
-  boost::thread trackerThread;
+  
   float red, green, blue; //Colors for visualization
   float lastComputation;
 
+  int loopCounter;
+
+  boost::thread* trackerThread;
+  float threadLatency;
+  Tracker* targetTracker;
   PointCloud<PointXYZRGBA>::Ptr InputCloud;
   PointCloud<PointXYZRGBA>::Ptr ColliderCloud;
   PointCloud<PointXYZRGBA>::Ptr TargetCloud;
@@ -32,7 +37,12 @@ protected:
   Tracker();
   Tracker(std::string, char, float, float, float, int, bool, float);
   
+  void SetLoopCounter(int);
+  void SetThreadLatency(float);
   void StartTracking();
+  void ThreadedTrack();
+  void ThreadedCollision();
+
   PointCloud<PointXYZRGBA>::Ptr Track(const PointCloud<PointXYZRGBA>::Ptr &cloud_in);
   PointCloud<PointXYZRGBA>::Ptr Track(const PointCloud<PointXYZRGBA>::Ptr &cloud_1,
 				      const PointCloud<PointXYZRGBA>::Ptr &cloud_2);

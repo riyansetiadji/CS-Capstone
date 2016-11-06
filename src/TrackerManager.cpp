@@ -22,7 +22,7 @@ TrackerManager::TrackerManager()
    visualizer.reset(new visualization::PCLVisualizer ("Tracking Viewer"));	
    visualizer->registerKeyboardCallback(kb);
 
-   trackerHeight = 1050;
+   trackerHeight = 850;
    visualizer->setSize (1920, 1080);
    visualizer->addCoordinateSystem(0.1);
    visualizer->initCameraParameters();

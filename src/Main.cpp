@@ -23,13 +23,13 @@ int main (int argc, char** argv)
   
   CloudViewer* cViewer = new CloudViewer();
   Tracker* TrackViewer = TrackerManager::GlobalTracker()->
-    CreateTracker(cViewer, "CloudViewer", 'z', 125, 175, 215, 1, true);
+    CreateTracker(cViewer, "CloudViewer", 'z', 125, 175, 215, 1, true); 
   Tracker* ObjectViewer = TrackerManager::GlobalTracker()->
     CreateTracker(cViewer, "ObjectViewer", 'y', 125, 185, 15, 2, false);
 
   VoxelFilter* vFilter = new VoxelFilter(0.009, 0.009, 0.009);
   Tracker* TrackVoxelFilter = TrackerManager::GlobalTracker()->
-    CreateTracker(vFilter, "VoxelTracker", 'v', 5, 225, 195, 3, false);
+    CreateTracker(vFilter, "VoxelTracker", 'v', 5, 225, 195, 3, true);
 
   KDTracker* kdTracker = new KDTracker("../data/andy_hand.pcd", "../data/"+fileloc+"/"+fileloc+"10.pcd");
   Tracker* TrackHandFilter = TrackerManager::GlobalTracker()->
@@ -45,6 +45,9 @@ int main (int argc, char** argv)
   Tracker* TrackNaiveCollision = TrackerManager::GlobalTracker()->
     CreateTracker(nc, "NaiveCollision", 'c', 255, 0, 15, 15, false);
  
+  int trackerSize = 3;
+  //Tracker* trackers[5] = {TrackViewer, TrackVoxelFilter, TrackHandFilter, TrackParticleFilter, TrackNaiveCollision};
+  Tracker* trackers[3] = {TrackVoxelFilter, TrackHandFilter, TrackParticleFilter};
   PCDInterface* pcdInterface = new PCDInterface(argv[2][0], std::atoi(argv[3]),fileloc);
   float milSeconds = std::atof(argv[4]);
   srand(time(NULL));
@@ -75,10 +78,39 @@ int main (int argc, char** argv)
     }
   else
     {
-	  while(pcdInterface->fileIndex < pcdInterface->maxFiles)
-	    {
-	      TrackerManager::GlobalTracker()->GetVisualizer()->spinOnce();
-	     PointCloud<PointXYZRGBA>::Ptr kinectCloud =
+	      
+	      //We may need to thread PCDInterface in order to have a constant reference
+	        
+	      //TrackViewer->SetThreadLatency(100);
+	      TrackViewer->SetLoopCounter(1);
+	      
+	      //TrackVoxelFilter->InputCloud = TrackViewer->TargetCloud;
+	      TrackVoxelFilter->targetTracker = TrackViewer;
+	      //TrackVoxelFilter->SetThreadLatency(100);
+	      TrackVoxelFilter->SetLoopCounter(1);
+	      
+	      //TrackHandFilter->InputCloud = TrackVoxelFilter->TargetCloud;
+	      TrackHandFilter->targetTracker = TrackVoxelFilter;
+	      //TrackHandFilter->SetThreadLatency(100);
+	      TrackHandFilter->SetLoopCounter(1);
+	      
+	      //TrackParticleFilter->InputCloud = TrackHandFilter->TargetCloud;
+	      TrackParticleFilter->targetTracker = TrackHandFilter;
+	      //TrackParticleFilter->SetThreadLatency(100);
+	      TrackParticleFilter->SetLoopCounter(1);
+	      
+	      //TrackNaiveCollision->InputCloud = kdTracker->getObjectCloud(); //This probably won't work either
+	      //TrackNaiveCollision->ColliderCloud = TrackHandFilter->TargetCloud;
+	      //TrackNaiveCollision->SetThreadLatency(100);
+	      TrackNaiveCollision->SetLoopCounter(1);
+	      
+	      //TrackViewer->StartTracking();
+	      //TrackVoxelFilter->StartTracking();
+	      //TrackHandFilter->StartTracking();
+	      //TrackParticleFilter->StartTracking();
+	      //TrackNaiveCollision->StartTracking();
+
+	      /*PointCloud<PointXYZRGBA>::Ptr kinectCloud =
 	      TrackViewer->Track(pcdInterface->GetNextCloud());
 	     PointCloud<PointXYZRGBA>::Ptr filterCloud = 
 	       TrackVoxelFilter->Track(kinectCloud);
@@ -88,9 +120,29 @@ int main (int argc, char** argv)
 	      PointCloud<PointXYZRGBA>::Ptr particleCloud = 
 		TrackParticleFilter->Track(kdTracker->getObjectCloud());
 	      PointCloud<PointXYZRGBA>::Ptr collideCloud =
-	      TrackNaiveCollision->Track(particleCloud, handCloud);
-	      boost::this_thread::sleep(boost::posix_time::milliseconds(milSeconds));
-	    }
+	      TrackNaiveCollision->Track(particleCloud, handCloud);*/
+	      while(pcdInterface->fileIndex < pcdInterface->maxFiles)
+		{
+		  TrackerManager::GlobalTracker()->GetVisualizer()->spinOnce();
+		  PointCloud<PointXYZRGBA>::Ptr kinectCloud =
+	      TrackViewer->Track(pcdInterface->GetNextCloud());
+		  printf("Spin");
+		int i = 0;
+		for(i; i < trackerSize; i++)
+		  {
+		    if(pcdInterface->fileIndex % trackers[i]->loopCounter == 0)
+		      {
+			printf("Executre");
+			if(trackers[i]->InputCloud->points.empty())
+			  printf("Shit's empty as fuck dawg");
+			else if(trackers[i]->ColliderCloud == NULL)
+			  trackers[i]->ThreadedTrack();
+			else
+			  trackers[i]->ThreadedCollision();
+		      }
+		  }
+		boost::this_thread::sleep(boost::posix_time::milliseconds(milSeconds));
+		}
     }
 
   return 0;

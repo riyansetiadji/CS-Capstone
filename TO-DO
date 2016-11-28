@@ -1,7 +1,0 @@
--Collision implementation	DONE
--Cull hand points from object cleanly	DONE
--Run particle filter on hand-filtered cloud	DONE
-
--Write dataset for each tracking algorithm based on (position, orientation)
--Run script for setting program parameters
--Tools for setting execution frequency of algorithm

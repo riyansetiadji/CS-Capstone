@@ -1,10 +1,17 @@
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
 project(hand_tracking)
 
-find_package(PCL 1.7 REQUIRED)
+set(PCL_DIR "${PROJECT_SOURCE_DIR}/pcl/PCLConfig.cmake")
+#include("~/Desktop/capstone/CS-Capstone/pcl/PCLConfig.cmake")
+
+find_package(PCL 1.8 REQUIRED PATHS "${PROJECT_SOURCE_DIR}/pcl" NO_DEFAULT_PATH)
+
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
+
+#include_directories("${PROJECT_SOURCE_DIR}/pcl/include")
+#link_directories("${PROJECT_SOURCE_DIR}/pcl/lib")
 
 find_package(Boost REQUIRED)
 
@@ -12,6 +19,7 @@ find_package(Boost REQUIRED)
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 # We don't really need to include header and resource files to build
 # file(GLOB_RECURSE HEADERS "include/*.hpp")
+
 include_directories("${PROJECT_SOURCE_DIR}/include")
 
 add_executable(${CMAKE_PROJECT_NAME} ${SOURCES})

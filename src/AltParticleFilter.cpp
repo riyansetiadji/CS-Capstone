@@ -1,0 +1,259 @@
+#include <AltParticleFilter.hpp>
+#include <TrackerManager.hpp>
+
+using namespace pcl;
+using namespace std;
+
+AltParticleFilter::AltParticleFilter(std::string filename, std::string d_id)
+{
+  target_cloud.reset(new PointCloud<PointXYZRGBA>());
+  if(io::loadPCDFile (filename, *target_cloud) == -1)
+    {
+      std::cout << "pcd file not found" << std::endl;
+    }
+  device_id = d_id;
+  counter = 0;
+  new_cloud_ = false;
+  model_flag = false;
+
+  downsampling_grid_size_ =  0.01;
+
+  std::vector<double> default_step_covariance = std::vector<double> (6, 0.015*0.015);
+  default_step_covariance[3] *= 40.0;
+  default_step_covariance[4] *= 40.0;
+  default_step_covariance[5] *= 40.0;
+
+  std::vector<double> initial_noise_covariance = std::vector<double> (6, 1.01);
+  std::vector<double> default_initial_mean = std::vector<double> (6, 0.0);
+
+  //Constructor argument is number of threads for OMP Tracker
+  boost::shared_ptr<tracking::KLDAdaptiveParticleFilterOMPTracker<PointXYZRGBA, tracking::ParticleXYZRPY> > tracker
+    (new tracking::KLDAdaptiveParticleFilterOMPTracker<PointXYZRGBA, tracking::ParticleXYZRPY> (8));
+
+  //Relatively certain 1.0 is 1 meter. Standard bin sizes are on the order of centimeters
+  tracking::ParticleXYZRPY bin_size;
+  bin_size.x = 0.01f;
+  bin_size.y = 0.01f;
+  bin_size.z = 0.01f;
+  bin_size.roll = 0.01f;
+  bin_size.pitch = 0.01f;
+  bin_size.yaw = 0.01f;
+
+
+  //Set all parameters for  KLDAdaptiveParticleFilterOMPTracker
+  tracker->setMaximumParticleNum (250);
+  //Delta sets the probability that our sample is below the epsilon boundary
+  //Higher delta -> don't second-guess youtself
+  tracker->setDelta (0.99);  //0.99 is a standard from the paper introducing KLD
+  //The smaller epsilon, the more samples are needed to approximate that
+  //smaller level of error
+  //"...the required number of samples is proportional to the inverse
+  //of the epsilon bound, and to the first order linear in the number k of bins"
+  // tl;dr higher epsilon trades accuracy for speed
+  tracker->setEpsilon (0.01); 
+
+  //KLD Trackers dynaimcally compute the number of bins. Not 
+  tracker->setBinSize (bin_size);
+
+  //Set all parameters for  ParticleFilter
+  tracker_ = tracker;
+  tracker_->setTrans (Eigen::Affine3f::Identity ());
+  tracker_->setStepNoiseCovariance (default_step_covariance);
+  tracker_->setInitialNoiseCovariance (initial_noise_covariance);
+  tracker_->setInitialNoiseMean (default_initial_mean);
+  tracker_->setIterationNum (1);
+  tracker_->setParticleNum (250);
+  tracker_->setResampleLikelihoodThr(0.00);
+  tracker_->setUseNormal (false);
+
+  //Setup coherence object for tracking
+  tracking::ApproxNearestPairPointCloudCoherence<PointXYZRGBA>::Ptr coherence = tracking::ApproxNearestPairPointCloudCoherence<PointXYZRGBA>::Ptr
+    (new tracking::ApproxNearestPairPointCloudCoherence<PointXYZRGBA> ());
+    
+  boost::shared_ptr<tracking::DistanceCoherence<PointXYZRGBA> > distance_coherence
+    = boost::shared_ptr<tracking::DistanceCoherence<PointXYZRGBA> > (new tracking::DistanceCoherence<PointXYZRGBA> ());
+  distance_coherence->setWeight(1.0f);
+  coherence->addPointCoherence (distance_coherence);
+
+  /*boost::shared_ptr<tracking::HSVColorCoherence<PointXYZRGBA> > color_coherence
+    = boost::shared_ptr<tracking::HSVColorCoherence<PointXYZRGBA> > 
+    (new tracking::HSVColorCoherence<PointXYZRGBA> ());
+  color_coherence->setWeight(1.0f);
+  coherence->addPointCoherence (color_coherence);*/
+
+  /*boost::shared_ptr<tracking::NormalCoherence<PointXYZRGBA> > normal_coherence
+    = boost::shared_ptr<tracking::NormalCoherence<PointXYZRGBA> > 
+    (new tracking::NormalCoherence<PointXYZRGBA> ());  //PCL breaks if try to use normals
+  normal_coherence->setWeight(1.0f);
+  coherence->addPointCoherence (normal_coherence);  */
+
+  float octreeLeafSize = 0.1f;
+  boost::shared_ptr<search::Octree<PointXYZRGBA> > search (new search::Octree<PointXYZRGBA> (octreeLeafSize));
+  coherence->setSearchMethod (search);
+  tracker_->setCloudCoherence (coherence);  // Coherence is likelihood function
+}
+
+PointCloud<PointXYZRGBA>::Ptr
+AltParticleFilter::Execute(const PointCloud<PointXYZRGBA>::Ptr &cloud_in)
+{
+  PCA<PointXYZRGBA> pcaThing = PCA<PointXYZRGBA>(true);
+  pcaThing.setInputCloud(cloud_in);
+
+  if(!model_flag)
+   {
+     //setModel(cloud_in);
+     setModel(target_cloud);
+     model_flag = true;
+  }
+
+  //std::cout << cloud_in->points.size();
+  cloud_pass_.reset (new PointCloud<PointXYZRGBA>);
+  cloud_pass_downsampled_.reset (new PointCloud<PointXYZRGBA>);
+  //FilterPassThrough (cloud_in, *cloud_pass_);
+  //GridSampleApprox (cloud_pass_, *cloud_pass_downsampled_, downsampling_grid_size_);
+
+  if(counter < 10)
+  {
+	counter++;
+  }
+  else if(!cloud_in->empty())
+  {
+    //Track the object
+    //std::cout << cloud_pass_downsampled_->points.size() + "\n";
+    tracker_->setInputCloud (cloud_in);
+    //tracker_->setInputCloud (cloud_in);
+    tracker_->compute ();
+    new_cloud_ = true;
+ 
+  }
+
+  //prepare the model of tracker's target
+  Eigen::Vector4f c;
+  Eigen::Vector4f d;
+  Eigen::Affine3f trans = Eigen::Affine3f::Identity ();
+  Eigen::Affine3f modelTrans = Eigen::Affine3f::Identity ();
+  //PointCloud<PointXYZRGBA>::Ptr transed_ref (new PointCloud<PointXYZRGBA>);
+  
+  compute3DCentroid<PointXYZRGBA> (*cloud_in, c);
+  compute3DCentroid<PointXYZRGBA> (*target_cloud, d);
+
+  //Eigen::Vector4f e = c-d;
+
+  //trans.translation ().matrix () = Eigen::Vector3f (c[0], c[1], c[2]);
+  //modelTrans.translation().matrix()= Eigen::Vector3f (e[0], e[1], e[2]); 
+  //transformPointCloud<PointXYZRGBA> (*target_cloud, *transed_ref, modelTrans);
+  
+  Eigen::Matrix3f bases = pcaThing.getEigenVectors();
+  Eigen::Matrix3f orthonormalized = bases.householderQr().householderQ();
+  Eigen::Quaternionf q(orthonormalized);
+  Eigen::Quaternionf inverseRot = q;
+  //q = q.conjugate();
+  //inverseRot.matrix() = bases;
+
+  Eigen::Vector3f new_centroid = q._transformVector(c.head<3>());
+
+  tracking::ParticleXYZRPY result = tracker_->getResult ();
+  Eigen::Affine3f transformation = tracker_->toEigenMatrix (result);
+  //transformation.rotate(q);
+  //transformation.translate(c.head<3>() - new_centroid);
+
+  DrawParticles(transformation);
+  ReturnCloud = cloud_in;
+  return ReturnCloud;
+}
+
+void AltParticleFilter::GridSampleApprox(const PointCloud<PointXYZRGBA>::ConstPtr &cloud, PointCloud<PointXYZRGBA> &result, double leaf_size)
+{
+  ApproximateVoxelGrid<PointXYZRGBA> grid;
+  grid.setLeafSize (static_cast<float> (leaf_size), static_cast<float> (leaf_size), static_cast<float> (leaf_size));
+  grid.setInputCloud (cloud);
+  grid.filter (result);
+}
+
+void AltParticleFilter::FilterPassThrough(const PointCloud<PointXYZRGBA>::Ptr &cloud, PointCloud<PointXYZRGBA> &result)
+{
+  PassThrough<PointXYZRGBA> pass;
+  pass.setFilterFieldName ("z");
+  pass.setFilterLimits (0.0, TrackerManager::GlobalTracker()->GetZDepth());
+  pass.setKeepOrganized (false);
+  pass.setInputCloud (cloud);
+  pass.filter (result);
+}
+
+bool AltParticleFilter::DrawParticles(Eigen::Affine3f pcaRot)
+{
+  PointCloud<PointXYZRGBA>::Ptr result_cloud (new PointCloud<PointXYZRGBA>);
+  
+  pcl::transformPointCloud<PointXYZRGBA>
+    (*(tracker_->getReferenceCloud ()), *result_cloud, pcaRot);
+
+  //Draw blue model reference point cloud
+    pcl::visualization::PointCloudColorHandlerCustom<PointXYZRGBA> blue_color (result_cloud, 255, 255, 5);
+boost::shared_ptr<visualization::PCLVisualizer> visualizer = 
+    TrackerManager::GlobalTracker()->GetVisualizer();
+ std::string name = "pringles curley mustache";
+  if (!visualizer->updatePointCloud (result_cloud, blue_color, name))
+    {
+      visualizer->addPointCloud (result_cloud, blue_color, name);
+      visualizer->setPointCloudRenderingProperties
+	(visualization::PCL_VISUALIZER_POINT_SIZE, 1, name);
+    }
+}
+
+Eigen::Affine3f AltParticleFilter::ComputeTransform()
+{
+  return Eigen::Affine3f::Identity ();
+}
+
+void AltParticleFilter::PrintAlgorithm()
+{
+  
+}
+void AltParticleFilter::setModel(const PointCloud<PointXYZRGBA>::Ptr &cloud_in){
+
+  PointCloud<PointXYZRGBA>::Ptr transed_ref_downsampled (new PointCloud<PointXYZRGBA>);
+
+  GridSampleApprox (cloud_in, *transed_ref_downsampled, downsampling_grid_size_);
+  
+  /*float avgr = 0;
+  float avgg = 0;
+  float avgb = 0;
+  for(int i = 0; i < transed_ref_downsampled->points.size();i++)
+    {
+      int mr = transed_ref_downsampled->points[i].r;
+      int mg = transed_ref_downsampled->points[i].g;
+      int mb = transed_ref_downsampled->points[i].b;
+      avgr += mr;
+      avgg += mg;
+      avgb += mb;
+    }
+  avgr = avgr /  transed_ref_downsampled->points.size();
+  avgg = avgg /  transed_ref_downsampled->points.size();
+  avgb = avgb /  transed_ref_downsampled->points.size();
+  std::cout << "Model color: " << avgr << std::endl;
+  std::cout << "Model color: " << avgg << std::endl;
+  std::cout << "Model color: " << avgb << std::endl;
+
+  avgr = 0;
+  avgg = 0;
+  avgb = 0;
+  for(int i = 0; i < cloud_in->points.size();i++)
+    {
+      int mr = cloud_in->points[i].r;
+      int mg = cloud_in->points[i].g;
+      int mb = cloud_in->points[i].b;
+      avgr += mr;
+      avgg += mg;
+      avgb += mb;
+    }
+  avgr = avgr /  cloud_in->points.size();
+  avgg = avgg /  cloud_in->points.size();
+  avgb = avgb /  cloud_in->points.size();
+  std::cout << "Object color: " << avgr << std::endl;
+  std::cout << "Object color: " << avgg << std::endl;
+  std::cout << "Object color: " << avgb << std::endl;*/
+  
+  //set reference model and trans
+  tracker_->setReferenceCloud (transed_ref_downsampled);
+  //tracker_->setTrans (trans);
+}

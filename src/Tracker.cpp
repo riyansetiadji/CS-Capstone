@@ -71,6 +71,12 @@ PointCloud<PointXYZRGBA>::Ptr Tracker::Track(const PointCloud<PointXYZRGBA>::Ptr
       lastComputation = (end - start)*1000;
       UpdateVisualizer();
     }
+  else
+    {
+      boost::shared_ptr<visualization::PCLVisualizer> visualizer = 
+    TrackerManager::GlobalTracker()->GetVisualizer();
+      visualizer->removePointCloud(name);
+    }
     
     return TargetCloud;
 }

@@ -3,6 +3,7 @@
 #include <TableSegmenter.hpp>
 #include <KDTracker.hpp>
 #include <ParticleFilter.hpp>
+#include <AltParticleFilter.hpp>
 #include <NaiveCollider.hpp>
 #include <CloudViewer.hpp>
 #include <VoxelFilter.hpp>
@@ -39,7 +40,11 @@ int main (int argc, char** argv)
   std::string did = "666";
   ParticleFilter* pf = new ParticleFilter(file, did);
   Tracker* TrackParticleFilter = TrackerManager::GlobalTracker()->
-    CreateTracker(pf, "ParticleFilter", 'b', 9, 0, 255, 5, false);
+    CreateTracker(pf, "ParticleFilter", 'b', 9, 0, 255, 5, false); 
+
+  AltParticleFilter* apf = new AltParticleFilter(file, did);
+  Tracker* TrackAltParticleFilter = TrackerManager::GlobalTracker()->
+    CreateTracker(apf, "AltParticleFilter", 'n', 190, 10, 255, 5, false); 
 
   NaiveCollider* nc = new NaiveCollider(1.1f);
   Tracker* TrackNaiveCollision = TrackerManager::GlobalTracker()->
@@ -85,6 +90,8 @@ int main (int argc, char** argv)
 	     PointCloud<PointXYZRGBA>::Ptr handCloud = 
 		TrackHandFilter->Track(filterCloud);
 	      ObjectViewer->Track(kdTracker->getObjectCloud());
+	      PointCloud<PointXYZRGBA>::Ptr aParticleCloud = 
+		TrackAltParticleFilter->Track(kdTracker->getObjectCloud());
 	      PointCloud<PointXYZRGBA>::Ptr particleCloud = 
 		TrackParticleFilter->Track(kdTracker->getObjectCloud());
 	      PointCloud<PointXYZRGBA>::Ptr collideCloud =

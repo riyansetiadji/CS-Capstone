@@ -26,6 +26,9 @@
 
 #include <boost/format.hpp>
 
+#include <pcl/point_types.h>
+#include <pcl/features/normal_3d.h>
+
 #include <pcl/tracking/tracking.h>
 #include <pcl/tracking/particle_filter.h>
 #include <pcl/tracking/kld_adaptive_particle_filter_omp.h>
@@ -33,6 +36,7 @@
 #include <pcl/tracking/coherence.h>
 #include <pcl/tracking/distance_coherence.h>
 #include <pcl/tracking/hsv_color_coherence.h>
+#include <pcl/tracking/normal_coherence.h>
 #include <pcl/tracking/approx_nearest_pair_point_cloud_coherence.h>
 #include <pcl/tracking/nearest_pair_point_cloud_coherence.h>
 
@@ -41,27 +45,30 @@ using namespace pcl;
 class ParticleFilter : public Algorithm
 {
 public:
-  PointCloud<PointXYZRGBA>::Ptr cloud_pass_;
-  PointCloud<PointXYZRGBA>::Ptr cloud_pass_downsampled_;
-  PointCloud<PointXYZRGBA>::Ptr target_cloud;
+  PointCloud<PointXYZRGBNormal>::Ptr cloud_pass_;
+  PointCloud<PointXYZRGBNormal>::Ptr cloud_pass_downsampled_;
+  PointCloud<PointXYZRGBNormal>::Ptr target_cloud;
 
   boost::mutex mtx_;
-  boost::shared_ptr<tracking::ParticleFilterTracker<PointXYZRGBA, tracking::ParticleXYZRPY> > tracker_;
+boost::shared_ptr<tracking::ParticleFilterTracker<PointXYZRGBNormal, tracking::ParticleXYZRPY> > tracker_;
   bool new_cloud_;
   double downsampling_grid_size_;
   int counter;
   bool model_flag;
   std::string device_id;
+  std::string filename;
 
   ParticleFilter(std::string, std::string);
-  PointCloud<pcl::PointXYZRGBA>::Ptr 
+PointCloud<PointXYZRGBA>::Ptr 
   Execute(const PointCloud<PointXYZRGBA>::Ptr &);
   Eigen::Affine3f ComputeTransform();
   void PrintAlgorithm();
-  void setModel(const PointCloud<PointXYZRGBA>::Ptr &);
+  void setModel(const PointCloud<PointXYZRGBNormal>::Ptr &);
+  PointCloud<PointXYZRGBNormal>::Ptr 
+  getCloudNormals(const PointCloud<PointXYZRGBA>::Ptr &);
 
   void GridSampleApprox(const PointCloud<PointXYZRGBA>::ConstPtr &cloud, PointCloud<PointXYZRGBA> &result, double leaf_size);
-  void FilterPassThrough(const PointCloud<PointXYZRGBA>::Ptr &, PointCloud<PointXYZRGBA> &);
+  void FilterPassThrough(const PointCloud<PointXYZRGBNormal>::Ptr &, PointCloud<PointXYZRGBNormal> &);
   bool DrawParticles();
   
 

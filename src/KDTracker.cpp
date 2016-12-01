@@ -5,6 +5,9 @@ using namespace pcl;
 using namespace std;
 KDTracker::KDTracker(std::string handPath, std::string objectPath)
 {
+  last_frame_hand_points = -1000;
+  last_frame_object_points = -1000;
+  //starting_points_object = 0;	
   hand_h= 0.0;
   hand_s = 0.0;
   hand_v = 0.0;
@@ -35,8 +38,8 @@ KDTracker::KDTracker(std::string handPath, std::string objectPath)
   std::cout<<"object hue:"<<object_h<<std::endl;
   std::cout<<"object saturation:"<<object_s<<std::endl;
   std::cout<<"object value:"<<object_v<<std::endl;
-
-  //tree = boost::shared_ptr<search::Search<PointXYZRGBA> > (new search::KdTree<PointXYZRGBA>);
+  //std::cout<<"starting points in hand: "<<starting_points_hand<<std::endl;
+  //std::cout<<"starting points in object: "<<starting_points_object<<std::endl;
 }
 
 PointCloud<PointXYZRGBA>::Ptr
@@ -142,6 +145,7 @@ void KDTracker::getAvgHSV(const PointCloud<PointXYZRGBA>::ConstPtr &cloud,double
       if(r> 0 && r <= 255 && g> 0 && g <= 255 && b> 0 && b <= 255)
 	{
 	  counter++;
+	  
 	  RGBToHSV(r,g,b,&h,&s,&v);
 	  *h_avg += (double)h;
 	  *s_avg += (double)s;
@@ -322,20 +326,10 @@ PointCloud<PointXYZRGBA>::Ptr KDTracker::PointFilter(const PointCloud<PointXYZRG
   }
   return filtered_cloud;
 }
-
-
-PointCloud<PointXYZRGBA>::Ptr KDTracker::filterSetOfPcdWithClusters(const PointCloud<PointXYZRGBA>::Ptr &cloud, double handH,double objectH,int showcld)
+std::vector <PointIndices> KDTracker::getClusters(const PointCloud<PointXYZRGBA>::Ptr &cloud)
 {
-  //finished loading cloud
-  //a percentage from 0 to 1. how close to scanned average does the point need to be          
-  //used for region segmentation
-  search::Search <PointXYZRGBA>::Ptr tree = boost::shared_ptr<search::Search<PointXYZRGBA> > (new search::KdTree<PointXYZRGBA>);
-  PointCloud<PointXYZRGBA>::Ptr tmp_cloud(new PointCloud<PointXYZRGBA>);
-  PointCloud<PointXYZRGBA>::Ptr filtered_cloud(new PointCloud<PointXYZRGBA>);
-  PointCloud<PointXYZRGBA>::Ptr segmented_cloud(new PointCloud<PointXYZRGBA>);
-  hand_subtraction.reset(new PointCloud<PointXYZRGBA>);
-
-  //depth filter.
+	search::Search <PointXYZRGBA>::Ptr tree = boost::shared_ptr<search::Search<PointXYZRGBA> > (new search::KdTree<PointXYZRGBA>);
+	//depth filter.
   IndicesPtr indices (new std::vector <int>);
   PassThrough<PointXYZRGBA> pass;
   pass.setInputCloud (cloud);
@@ -356,11 +350,44 @@ PointCloud<PointXYZRGBA>::Ptr KDTracker::filterSetOfPcdWithClusters(const PointC
            
   std::vector <PointIndices> clusters;
   reg.extract (clusters);
+  return clusters;
+}
 
-  //holds the cloud that color codes the different clusters. replace finalcloud with this if you want to see clusters
-            
-  segmented_cloud = reg.getColoredCloudRGBA ();
-            
+PointCloud<PointXYZRGBA>::Ptr KDTracker::filterSetOfPcdWithClusters(const PointCloud<PointXYZRGBA>::Ptr &cloud, double handH,double objectH,int showcld)
+{
+  float point_threshold = .5;
+  float cluster_change_threshold = .5;
+  
+  PointCloud<PointXYZRGBA>::Ptr tmp_cloud(new PointCloud<PointXYZRGBA>);
+  PointCloud<PointXYZRGBA>::Ptr filtered_cloud(new PointCloud<PointXYZRGBA>);
+  
+  hand_subtraction.reset(new PointCloud<PointXYZRGBA>);
+
+   std::vector <PointIndices> clusters = getClusters(cloud);
+  /* while(clusters.size() != 2)
+   {
+   	if(clusters.size() > 2 )
+   	{
+   		std::cout<<"increasing thresholds"<<std::endl;
+   		//distance_threshold = distance_threshold +point_threshold;
+	  point_color_threshold = point_color_threshold +point_threshold;
+	  region_color_threshold = region_color_threshold +point_threshold;
+	  std::cout<<"distance_threshold: "<<distance_threshold<<std::endl;
+	  std::cout<<"point_color_threshold: "<<point_color_threshold<<std::endl;
+	 std::cout<<"region_color_threshold: "<<region_color_threshold<<std::endl;
+   	}
+   	if(clusters.size() < 2)
+   	{
+   		std::cout<<"decreasing thresholds"<<std::endl;
+   		//distance_threshold = distance_threshold -point_threshold;
+	  point_color_threshold = point_color_threshold -point_threshold;
+	  region_color_threshold = region_color_threshold -point_threshold;
+	  std::cout<<"distance_threshold: "<<distance_threshold<<std::endl;
+	  std::cout<<"point_color_threshold: "<<point_color_threshold<<std::endl;
+	 std::cout<<"region_color_threshold: "<<region_color_threshold<<std::endl;
+   	}
+   	clusters = getClusters(cloud);
+   }*/
   int clusterIncluded = 0;
   std::cout<<"Cluster Size: "<<clusters.size()<<std::endl;
   for(int i =0; i < clusters.size(); i++)
@@ -385,30 +412,177 @@ PointCloud<PointXYZRGBA>::Ptr KDTracker::filterSetOfPcdWithClusters(const PointC
       distanceToObject = std::abs(objectH - h_average);
 
       if(distanceToHand < distanceToObject)
-	{
+			{
 	  for(int j=0; j< clusters[i].indices.size(); j++)//hand cloud
 	    {
-	      cloud->points[clusters[i].indices[j]].r = 255;
-	      cloud->points[clusters[i].indices[j]].g = 0;
-	      cloud->points[clusters[i].indices[j]].b = 0;
-                    		
-	      filtered_cloud->points.push_back(cloud->points[clusters[i].indices[j]]);
-       
+	      bool flag = false;
+	      if(last_frame_hand_points == -1000)
+	      {
+	      		last_frame_hand_points= clusters[i].indices.size();
+	      		filtered_cloud->points.push_back(cloud->points[clusters[i].indices[j]]);
+	      }
+	      else
+	      {
+	      	if(clusters[i].indices.size() > last_frame_hand_points + (last_frame_hand_points*cluster_change_threshold))
+	      	{
+
+	      		if(distance_threshold && point_color_threshold && region_color_threshold)
+	      		{
+	      			std::cout<<"too big!"<<std::endl;
+	      		 // distance_threshold = distance_threshold -point_threshold;
+				  point_color_threshold = point_color_threshold -point_threshold;
+				  region_color_threshold = region_color_threshold -point_threshold;
+				  	  std::cout<<"distance_threshold: "<<distance_threshold<<std::endl;
+
+				  std::cout<<"point_color_threshold: "<<point_color_threshold<<std::endl;
+				  std::cout<<"region_color_threshold: "<<region_color_threshold<<std::endl;
+				  i=0;
+				  clusters = getClusters(cloud);
+				  flag= true;
+	      		}
+	      		else
+	      			{
+	      				std::cout<<"reached threshold min"<<std::endl;
+	      			}
+			  
+			  
+	      	}
+	      	else
+	      	{
+	      		if(clusters[i].indices.size() < last_frame_hand_points - (last_frame_hand_points*cluster_change_threshold))
+	      		{
+	      			if(distance_threshold < 1000 && point_color_threshold < 1000 && region_color_threshold < 1000)
+	      			{
+	      			  std::cout<<"too small!"<<std::endl;
+
+	      			 //distance_threshold = distance_threshold +point_threshold;
+					  point_color_threshold = point_color_threshold +point_threshold;
+					  region_color_threshold = region_color_threshold +point_threshold;
+					  	  std::cout<<"distance_threshold: "<<distance_threshold<<std::endl;
+
+					  std::cout<<"point_color_threshold: "<<point_color_threshold<<std::endl;
+				  		std::cout<<"region_color_threshold: "<<region_color_threshold<<std::endl;
+					  i=0;
+					  clusters = getClusters(cloud);
+					  flag= true;
+	      			}
+	      			else
+	      			{
+	      				std::cout<<"reached threshold max"<<std::endl;
+	      			}
+
+	      		}
+	      		else
+	      		{
+
+	      			last_frame_hand_points= clusters[i].indices.size();
+	      			if(last_frame_hand_points > last_frame_object_points)
+	      			{
+	      				max_cluster_size=last_frame_hand_points + (last_frame_hand_points*cluster_change_threshold);
+	      			}else
+	      			{
+						max_cluster_size=last_frame_object_points + (last_frame_object_points*cluster_change_threshold);
+	      			}
+	      		}
+	      	}
+	      }
+
+	      if(!flag)
+	      {
+	      	
+	      		filtered_cloud->points.push_back(cloud->points[clusters[i].indices[j]]);        		
+	      	
+	      }
+       flag=false;
 	    }
       
 	}
-      else
+	else //for object
 	{
-	  for(int j=0; j< clusters[i].indices.size(); j++)//object cloud
+		for(int j=0; j< clusters[i].indices.size(); j++)
 	    {
-	      cloud->points[clusters[i].indices[j]].r = 0;
-	      cloud->points[clusters[i].indices[j]].g = 255;
-	      cloud->points[clusters[i].indices[j]].b = 0;
-                    		
-	      hand_subtraction->points.push_back(cloud->points[clusters[i].indices[j]]);
-	    }
+	      bool flag = false;
+	      if(last_frame_object_points == -1000)
+	      {
+	      		last_frame_object_points= clusters[i].indices.size();
+	      		
+	      }
+	      else
+	      {
+	      	if(clusters[i].indices.size() > last_frame_object_points + (last_frame_object_points*cluster_change_threshold))
+	      	{
 
+	      		if(distance_threshold && point_color_threshold && region_color_threshold)
+	      		{
+	      			std::cout<<"too big!"<<std::endl;
+	      		  distance_threshold = distance_threshold -point_threshold;
+				  point_color_threshold = point_color_threshold -point_threshold;
+				  region_color_threshold = region_color_threshold -point_threshold;
+				  	  std::cout<<"distance_threshold: "<<distance_threshold<<std::endl;
+
+				  std::cout<<"point_color_threshold: "<<point_color_threshold<<std::endl;
+				  std::cout<<"region_color_threshold: "<<region_color_threshold<<std::endl;
+				  i=0;
+				  clusters = getClusters(cloud);
+				  flag= true;
+	      		}
+	      		else
+	      			{
+	      				std::cout<<"reached threshold min"<<std::endl;
+	      			}
+			  
+			  
+	      	}
+	      	else
+	      	{
+	      		if(clusters[i].indices.size() < last_frame_object_points - (last_frame_object_points*cluster_change_threshold))
+	      		{
+	      			if(distance_threshold < 1000 && point_color_threshold < 1000 && region_color_threshold < 1000)
+	      			{
+	      			  std::cout<<"too small!"<<std::endl;
+
+	      			 distance_threshold = distance_threshold +point_threshold;
+					  point_color_threshold = point_color_threshold +point_threshold;
+					  region_color_threshold = region_color_threshold +point_threshold;
+					  	  std::cout<<"distance_threshold: "<<distance_threshold<<std::endl;
+
+					  std::cout<<"point_color_threshold: "<<point_color_threshold<<std::endl;
+				  		std::cout<<"region_color_threshold: "<<region_color_threshold<<std::endl;
+					  i=0;
+					  clusters = getClusters(cloud);
+					  flag= true;
+	      			}
+	      			else
+	      			{
+	      				std::cout<<"reached threshold max"<<std::endl;
+	      			}
+	      		}
+	      		else
+	      		{
+	      			last_frame_object_points= clusters[i].indices.size();
+	      			if(last_frame_hand_points > last_frame_object_points)
+	      			{
+	      				max_cluster_size=last_frame_hand_points + (last_frame_hand_points*cluster_change_threshold);
+	      			}else
+	      			{
+						max_cluster_size=last_frame_object_points + (last_frame_object_points*cluster_change_threshold);
+	      			}
+	      		}
+	      	}
+	      }
+
+	      if(!flag)
+	      {
+	      	
+	      		hand_subtraction->points.push_back(cloud->points[clusters[i].indices[j]]);
+	      	
+	      }
+       flag=false;
+	    }
 	}
+	  
+
+	
       tmp_cloud->points.clear();
     }
  std::cout<<"hand cloud point size: "<<filtered_cloud->points.size()<<std::endl;

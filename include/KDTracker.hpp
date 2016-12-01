@@ -38,7 +38,8 @@ using namespace pcl;
 class KDTracker : public Algorithm
 {
 public:
-  
+  int last_frame_hand_points;
+  int last_frame_object_points;
   double hand_h;
   double hand_s;
   double hand_v;
@@ -63,7 +64,7 @@ public:
   Execute(const PointCloud<PointXYZRGBA>::Ptr &);
   Eigen::Affine3f ComputeTransform();
   void PrintAlgorithm();
-
+std::vector <PointIndices> getClusters(const PointCloud<PointXYZRGBA>::Ptr &cloud);
   void RGBToHSV(float r, float g, float b, float *h, float *s, float *v);
   void getAvgHSV(const PointCloud<PointXYZRGBA>::ConstPtr &cloud,double *h_avg, double *s_avg, double *v_avg, int showcld);
   void getAvgHSVForOnePoints(const PointCloud<PointXYZRGBA>::ConstPtr &cloud,double *h_avg, double *s_avg, double *v_avg,int showcld);
